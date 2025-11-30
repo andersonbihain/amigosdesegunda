@@ -118,7 +118,9 @@ function processData(games, totalAvailable = null) {
     let duos = {}; // Para calcular sinergia
 
     // Processar cada jogo
-    games.forEach(game => {
+    const orderedGames = [...games].sort((a,b) => a.id - b.id);
+
+    orderedGames.forEach(game => {
         const golsC = game.placar.cinza;
         const golsB = game.placar.branco;
         const totalGameGoals = golsC + golsB;
@@ -145,8 +147,12 @@ function processData(games, totalAvailable = null) {
             if (!players[pName]) players[pName] = { 
                 name: pName, 
                 matches: 0, wins: 0, losses: 0, draws: 0, points: 0,
-                gkMatches: 0, gkGoals: 0, gkWorst: 0,
-                lineMatches: 0, linePoints: 0
+                gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0,
+                lineMatches: 0, linePoints: 0,
+                lastResults: [],
+                currentUnbeaten: 0, bestUnbeaten: 0,
+                currentWin: 0, bestWin: 0,
+                currentNoWin: 0, bestNoWin: 0
             };
             
             const p = players[pName];
@@ -154,12 +160,38 @@ function processData(games, totalAvailable = null) {
             if (result === 'V') { p.wins++; p.points += 3; }
             if (result === 'D') { p.losses++; }
             if (result === 'E') { p.draws++; p.points += 1; }
+            p.lastResults.push(result);
+
+            // Streaks
+            if (result === 'V' || result === 'E') {
+                p.currentUnbeaten++;
+                if (p.currentUnbeaten > p.bestUnbeaten) p.bestUnbeaten = p.currentUnbeaten;
+            } else {
+                p.currentUnbeaten = 0;
+            }
+
+            if (result === 'V') {
+                p.currentWin++;
+                if (p.currentWin > p.bestWin) p.bestWin = p.currentWin;
+            } else {
+                p.currentWin = 0;
+            }
+
+            if (result !== 'V') {
+                p.currentNoWin++;
+                if (p.currentNoWin > p.bestNoWin) p.bestNoWin = p.currentNoWin;
+            } else {
+                p.currentNoWin = 0;
+            }
 
             // Stats específicos
             if (pos === 'Goleiro') {
                 p.gkMatches++;
                 p.gkGoals += gc;
                 if (gc > p.gkWorst) p.gkWorst = gc;
+                if (result === 'V') p.gkWins++;
+                if (result === 'E') p.gkDraws++;
+                if (result === 'D') p.gkLosses++;
             } else {
                 p.lineMatches++;
                 p.linePoints += (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
@@ -224,11 +256,11 @@ function processData(games, totalAvailable = null) {
     // 2. Times Stats
     document.getElementById('team-stats-container').innerHTML = `
         <div class="flex justify-between items-center bg-slate-50 p-3 rounded mb-2">
-            <span class="font-bold">⚙️ Cinza</span>
+            <span class="font-bold flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full bg-slate-700"></span>Cinza</span>
             <span class="text-sm">${teamStats.cinza.w}V - ${teamStats.cinza.l}D - ${teamStats.cinza.d}E (${teamStats.cinza.g} Gols)</span>
         </div>
         <div class="flex justify-between items-center bg-white border border-slate-200 p-3 rounded">
-            <span class="font-bold">🏁 Branco</span>
+            <span class="font-bold flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full bg-amber-400 border border-amber-500"></span>Branco</span>
             <span class="text-sm">${teamStats.branco.w}V - ${teamStats.branco.l}D - ${teamStats.branco.d}E (${teamStats.branco.g} Gols)</span>
         </div>
     `;
@@ -243,6 +275,9 @@ function processData(games, totalAvailable = null) {
             <td class="px-6 py-3 whitespace-nowrap text-red-500">${p.losses}</td>
             <td class="px-6 py-3 whitespace-nowrap text-blue-500">${p.draws}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-900 font-bold text-lg">${p.points}</td>
+            <td class="px-6 py-3 whitespace-nowrap text-slate-500 text-lg">
+                ${p.lastResults.slice(-5).map(r => r === 'V' ? '✅' : (r === 'E' ? '➖' : '❌')).join(' ')}
+            </td>
         </tr>
     `).join('');
     document.getElementById('ranking-body').innerHTML = rankingHTML;
@@ -256,6 +291,7 @@ function processData(games, totalAvailable = null) {
             <td class="px-4 py-2 font-medium">${p.name}</td>
             <td class="px-4 py-2">${p.gkMatches}</td>
             <td class="px-4 py-2">${p.gkGoals}</td>
+            <td class="px-4 py-2">${p.gkWins}V / ${p.gkDraws}E / ${p.gkLosses}D</td>
             <td class="px-4 py-2 font-bold">${media}</td>
         </tr>
     `;
@@ -327,7 +363,7 @@ function processData(games, totalAvailable = null) {
         document.getElementById('game-score').innerHTML = `
             <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${game.data}</p>
-                <p class="text-4xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
+                <p class="text-3xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
                 <p class="text-sm text-slate-500">Resultado mais recente</p>
             </div>
             ${renderTeam(game.cinza, 'Time Cinza', 'slate')}
@@ -341,6 +377,43 @@ function processData(games, totalAvailable = null) {
         const selected = gamesById.find(g => g.id === parseInt(e.target.value, 10));
         if (selected) renderGame(selected);
     });
+
+    // Streaks (melhor invencibilidade, melhor sequência de vitórias, maior seca atual)
+    const freqThreshold = 10;
+    const unbeatenLeader = playersArr.reduce((best, p) => {
+        if (p.bestUnbeaten > (best?.bestUnbeaten || 0)) return p;
+        return best;
+    }, null);
+
+    const winLeader = playersArr.reduce((best, p) => {
+        if (p.bestWin > (best?.bestWin || 0)) return p;
+        return best;
+    }, null);
+
+    const droughtLeader = playersArr
+        .filter(p => p.matches >= freqThreshold)
+        .reduce((best, p) => {
+            if (!best || p.currentNoWin > best.currentNoWin) return p;
+            return best;
+        }, null);
+
+    document.getElementById('streaks-container').innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+            <p class="text-xs uppercase text-slate-500 font-semibold">Maior Invencibilidade</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${unbeatenLeader ? unbeatenLeader.name : '-'}</p>
+            <p class="text-sm text-slate-500">${unbeatenLeader ? `${unbeatenLeader.bestUnbeaten} jogos sem perder` : 'Sem dados'}</p>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+            <p class="text-xs uppercase text-slate-500 font-semibold">Maior Sequência de Vitórias</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${winLeader ? winLeader.name : '-'}</p>
+            <p class="text-sm text-slate-500">${winLeader ? `${winLeader.bestWin} vitórias seguidas` : 'Sem dados'}</p>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+            <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vitórias (freq. ≥ ${freqThreshold})</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${droughtLeader ? droughtLeader.name : '-'}</p>
+            <p class="text-sm text-slate-500">${droughtLeader ? `${droughtLeader.currentNoWin} jogos sem vencer` : 'Sem dados'}</p>
+        </div>
+    `;
 }
 
 // Lógica de ordenação da tabela HTML
