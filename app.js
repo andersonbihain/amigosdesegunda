@@ -202,17 +202,31 @@ function processData(games) {
     `).join('');
 
     // 6. Duplas
-    const duoArr = Object.entries(duos)
+    const duoBase = Object.entries(duos)
         .map(([name, stats]) => ({ name, ...stats, ppg: stats.points/stats.games }))
-        .filter(d => d.games >= 10)
-        .sort((a,b) => b.ppg - a.ppg)
-        .slice(0, 5); // Top 5
+        .filter(d => d.games >= 10);
 
-    document.getElementById('duo-body').innerHTML = duoArr.map(d => `
+    const bestDuos = [...duoBase]
+        .sort((a,b) => b.ppg - a.ppg)
+        .slice(0, 5); // Top 5 melhores
+
+    const worstDuos = [...duoBase]
+        .sort((a,b) => a.ppg - b.ppg)
+        .slice(0, 5); // Top 5 piores
+
+    document.getElementById('duo-body').innerHTML = bestDuos.map(d => `
         <tr>
             <td class="px-6 py-3 font-medium text-slate-700">${d.name}</td>
             <td class="px-6 py-3 text-slate-500">${d.games}</td>
             <td class="px-6 py-3 font-bold text-green-600">${d.ppg.toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    document.getElementById('duo-worst-body').innerHTML = worstDuos.map(d => `
+        <tr>
+            <td class="px-6 py-3 font-medium text-slate-700">${d.name}</td>
+            <td class="px-6 py-3 text-slate-500">${d.games}</td>
+            <td class="px-6 py-3 font-bold text-red-600">${d.ppg.toFixed(2)}</td>
         </tr>
     `).join('');
 

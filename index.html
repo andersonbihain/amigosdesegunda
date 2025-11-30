@@ -123,19 +123,37 @@
         </div>
 
         <!-- Duplas -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 p-6">
-            <h3 class="font-bold text-lg mb-4">🤝 Sinergia (Melhores Duplas)</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200" id="duo-table">
-                    <thead class="bg-slate-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Dupla</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Jogos Juntos</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pontos/Jogo (PPG)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 text-sm" id="duo-body"></tbody>
-                </table>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h3 class="font-bold text-lg mb-4">🤝 Sinergia (Melhores Duplas)</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200" id="duo-table">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Dupla</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Jogos Juntos</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pontos/Jogo (PPG)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm" id="duo-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h3 class="font-bold text-lg mb-4">Baixa Sinergia (Piores Duplas)</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200" id="duo-worst-table">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Dupla</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Jogos Juntos</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pontos/Jogo (PPG)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm" id="duo-worst-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
