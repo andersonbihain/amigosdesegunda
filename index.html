@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FutStats - Dashboard da Temporada</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans">
+
+    <!-- Navegação / Cabeçalho -->
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold">⚽ FutStats</span>
+                </div>
+                <div class="text-sm bg-blue-800 px-3 py-1 rounded-full" id="last-update">
+                    Carregando dados...
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- KPIs (Cards Superiores) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="kpis-container">
+            <!-- Injetado via JS -->
+        </div>
+
+        <!-- Seção: Times e Confronto Direto -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Card Times -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200">
+                <h3 class="text-lg font-bold mb-4 text-slate-700 border-b pb-2">Placar Geral dos Times</h3>
+                <div id="team-stats-container" class="space-y-4"></div>
+            </div>
+
+            <!-- Card H2H (Bihain vs Daniel) -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 lg:col-span-2">
+                <div class="flex justify-between items-center border-b pb-2 mb-4">
+                    <h3 class="text-lg font-bold text-slate-700">Confronto de Titãs</h3>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">MVPs (Pontos)</span>
+                </div>
+                <div id="h2h-container" class="flex justify-around items-center h-32">
+                    <!-- Injetado via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela Principal: Ranking Geral -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden">
+            <div class="p-6 bg-white border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800">🏆 Ranking Geral da Temporada</h3>
+                <span class="text-xs text-slate-500 italic">* Clique nos títulos para ordenar</span>
+            </div>
+            <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <table class="min-w-full divide-y divide-slate-200" id="ranking-table">
+                    <thead class="bg-slate-50 sticky top-0 z-10">
+                        <tr>
+                            <th onclick="sortTable('ranking-table', 0)" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Jogador</th>
+                            <th onclick="sortTable('ranking-table', 1)" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Jogos</th>
+                            <th onclick="sortTable('ranking-table', 2)" class="px-6 py-3 text-left text-xs font-bold text-green-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Vitória</th>
+                            <th onclick="sortTable('ranking-table', 3)" class="px-6 py-3 text-left text-xs font-bold text-red-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Derrota</th>
+                            <th onclick="sortTable('ranking-table', 4)" class="px-6 py-3 text-left text-xs font-bold text-blue-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Empate</th>
+                            <th onclick="sortTable('ranking-table', 5)" class="px-6 py-3 text-left text-xs font-bold text-slate-900 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200 text-sm" id="ranking-body">
+                        <!-- Linhas geradas via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seção: Posições Específicas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Goleiros -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="font-bold text-slate-700">🧤 Muralha (Goleiros)</h3>
+                </div>
+                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table class="min-w-full divide-y divide-slate-200" id="gk-table">
+                        <thead class="bg-slate-50 sticky top-0">
+                            <tr>
+                                <th onclick="sortTable('gk-table', 0)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Nome</th>
+                                <th onclick="sortTable('gk-table', 1)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
+                                <th onclick="sortTable('gk-table', 2)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Gols Sofridos</th>
+                                <th onclick="sortTable('gk-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Média</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm" id="gk-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Jogadores de Linha -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50">
+                    <h3 class="font-bold text-slate-700">🏃‍♂️ Eficiência Linha (>10 Jogos)</h3>
+                </div>
+                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table class="min-w-full divide-y divide-slate-200" id="line-table">
+                        <thead class="bg-slate-50 sticky top-0">
+                            <tr>
+                                <th onclick="sortTable('line-table', 0)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Nome</th>
+                                <th onclick="sortTable('line-table', 1)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
+                                <th onclick="sortTable('line-table', 2)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">PPG</th>
+                                <th onclick="sortTable('line-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">% Aprov.</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-sm" id="line-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duplas -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 p-6">
+            <h3 class="font-bold text-lg mb-4">🤝 Sinergia (Melhores Duplas)</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200" id="duo-table">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Dupla</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Jogos Juntos</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Pontos/Jogo (PPG)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-sm" id="duo-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t mt-12 py-8 text-center text-slate-500 text-sm">
+        <p>Dashboard atualizado automaticamente via GitHub Pages.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
