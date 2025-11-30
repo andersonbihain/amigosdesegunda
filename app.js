@@ -235,14 +235,43 @@ function processData(games) {
         </tr>
     `).join('');
 
-    // H2H Simplificado (Bihain vs Daniel)
-    // Nota: lógica completa de H2H exigiria re-iterar os jogos. Aqui uso dados fixos.
-    const h2hData = { pA: 'Bihain', winsA: 7, pB: 'Daniel', winsB: 3, draws: 2 }; 
-    document.getElementById('h2h-container').innerHTML = `
-        <div class="text-center"><p class="text-2xl font-bold text-blue-600">${h2hData.pA}</p><p class="text-4xl font-bold text-blue-600">${h2hData.winsA}</p><p class="text-xs text-slate-400">Vitórias</p></div>
-        <div class="text-center px-4"><p class="text-xl font-bold text-slate-300">VS</p><p class="text-sm text-slate-500">${h2hData.draws} Empates</p></div>
-        <div class="text-center"><p class="text-2xl font-bold text-slate-700">${h2hData.pB}</p><p class="text-4xl font-bold text-slate-700">${h2hData.winsB}</p><p class="text-xs text-slate-400">Vitórias</p></div>
-    `;
+    // Últimos jogos (selecionável)
+    const gamesById = [...games].sort((a, b) => a.id - b.id);
+    const gameSelect = document.getElementById('game-select');
+    gameSelect.innerHTML = gamesById
+        .slice()
+        .reverse()
+        .map(g => `<option value="${g.id}">Jogo ${g.id} - ${g.data} (${g.placar.cinza}x${g.placar.branco})</option>`)
+        .join('');
+
+    const renderGame = (game) => {
+        const renderTeam = (team, color) => `
+            <div class="bg-${color}-50 border border-${color}-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-${color}-700 mb-2">Goleiro: ${standardize(team.goleiro)}</p>
+                <p class="text-xs uppercase text-${color}-500 mb-1">Linha</p>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    ${team.linha.map(p => `<span class="px-2 py-1 bg-white border border-${color}-200 rounded">${standardize(p)}</span>`).join('')}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('game-score').innerHTML = `
+            <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${game.data}</p>
+                <p class="text-4xl font-bold text-slate-800 my-2">${game.placar.cinza} x ${game.placar.branco}</p>
+                <p class="text-sm text-slate-500">Cinza vs Branco</p>
+            </div>
+            ${renderTeam(game.cinza, 'blue')}
+            ${renderTeam(game.branco, 'amber')}
+        `;
+    };
+
+    renderGame(gamesById[gamesById.length - 1]);
+
+    gameSelect.addEventListener('change', (e) => {
+        const selected = gamesById.find(g => g.id === parseInt(e.target.value, 10));
+        if (selected) renderGame(selected);
+    });
 }
 
 // Lógica de ordenação da tabela HTML

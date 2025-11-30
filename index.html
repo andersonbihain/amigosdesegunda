@@ -17,6 +17,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center">
+                    <img src="logo.png" alt="Escudo do time" class="h-10 w-10 mr-3 rounded-full border border-blue-800 object-cover">
                     <span class="text-2xl font-bold">⚽ FutStats</span>
                 </div>
                 <div class="text-sm bg-blue-800 px-3 py-1 rounded-full" id="last-update">
@@ -40,14 +41,21 @@
                 <h3 class="text-lg font-bold mb-4 text-slate-700 border-b pb-2">Placar Geral dos Times</h3>
                 <div id="team-stats-container" class="space-y-4"></div>
             </div>
-
-            <!-- Card H2H (Bihain vs Daniel) -->
+            <!-- Card Últimos Jogos -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-200 lg:col-span-2">
-                <div class="flex justify-between items-center border-b pb-2 mb-4">
-                    <h3 class="text-lg font-bold text-slate-700">Confronto de Titãs</h3>
-                    <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">MVPs (Pontos)</span>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-3 mb-4 gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-700">Últimos Jogos</h3>
+                        <p class="text-xs text-slate-500">Veja o resultado mais recente ou escolha outro jogo</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="game-select" class="text-xs text-slate-500 uppercase font-semibold">Jogo</label>
+                        <select id="game-select" class="text-sm border border-slate-200 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- options via JS -->
+                        </select>
+                    </div>
                 </div>
-                <div id="h2h-container" class="flex justify-around items-center h-32">
+                <div id="game-score" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                     <!-- Injetado via JS -->
                 </div>
             </div>
