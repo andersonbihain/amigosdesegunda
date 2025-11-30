@@ -39,65 +39,53 @@ function standardize(name) {
 
 // --- CARREGAMENTO DE DADOS ---
 let originalGames = [];
-let dateValues = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('games.json')
         .then(response => response.json())
         .then(data => {
             originalGames = data;
-            initDateFilter();
+            setupFilters();
             applyFilter();
         })
         .catch(error => console.error('Erro ao carregar dados:', error));
 });
 
-function initDateFilter() {
-    const ordered = [...originalGames].sort((a,b) => a.id - b.id);
-    dateValues = [];
-    ordered.forEach(g => {
-        if (!dateValues.includes(g.data)) dateValues.push(g.data);
-    });
+function parseGameDate(str) {
+    const [day, month] = str.split('/').map(Number);
+    return new Date(new Date().getFullYear(), month - 1, day);
+}
 
-    const startRange = document.getElementById('filter-start-range');
-    const endRange = document.getElementById('filter-end-range');
-    const startLabel = document.getElementById('filter-start-label');
-    const endLabel = document.getElementById('filter-end-label');
+function setupFilters() {
+    const startInput = document.getElementById('filter-start');
+    const endInput = document.getElementById('filter-end');
+    const clearBtn = document.getElementById('filter-clear');
 
-    const maxIdx = Math.max(dateValues.length - 1, 0);
-    startRange.min = 0; startRange.max = maxIdx; startRange.value = 0;
-    endRange.min = 0; endRange.max = maxIdx; endRange.value = maxIdx;
-
-    const updateLabels = () => {
-        startLabel.textContent = dateValues[startRange.value] || '-';
-        endLabel.textContent = dateValues[endRange.value] || '-';
-    };
-    updateLabels();
-
-    const onInput = () => {
-        if (parseInt(startRange.value, 10) > parseInt(endRange.value, 10)) {
-            startRange.value = endRange.value;
-        }
-        updateLabels();
+    const onChange = () => applyFilter();
+    startInput.addEventListener('change', onChange);
+    endInput.addEventListener('change', onChange);
+    clearBtn.addEventListener('click', () => {
+        startInput.value = '';
+        endInput.value = '';
         applyFilter();
-    };
-
-    startRange.addEventListener('input', onInput);
-    endRange.addEventListener('input', onInput);
+    });
 }
 
 function applyFilter() {
-    const startIdx = parseInt(document.getElementById('filter-start-range').value, 10) || 0;
-    const endIdx = parseInt(document.getElementById('filter-end-range').value, 10) || (dateValues.length - 1);
+    const startInput = document.getElementById('filter-start');
+    const endInput = document.getElementById('filter-end');
+    const start = startInput.value ? new Date(startInput.value) : null;
+    const end = endInput.value ? new Date(endInput.value) : null;
 
     const filtered = originalGames.filter(g => {
-        const idx = dateValues.indexOf(g.data);
-        if (idx === -1) return false;
-        return idx >= startIdx && idx <= endIdx;
+        const gd = parseGameDate(g.data);
+        if (start && gd < start) return false;
+        if (end && gd > end) return false;
+        return true;
     });
 
     const info = document.getElementById('filter-info');
-    if (startIdx !== 0 || endIdx !== dateValues.length - 1) {
+    if (start || end) {
         info.textContent = `Mostrando ${filtered.length} de ${originalGames.length} jogos`;
     } else {
         info.textContent = 'Mostrando todos os jogos';
