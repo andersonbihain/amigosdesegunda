@@ -1,7 +1,7 @@
 // --- CONFIGURAÇÃO DE PADRONIZAÇÃO DE NOMES ---
 // Adicione aqui variações de nomes para garantir que o sistema entenda quem é quem.
 const NAME_MAPPING = {
-    'gesse': 'Gessé', 'gessé': 'Gessé',
+    'gesse': 'Gesse', 'gessé': 'Gesse', 'gessǸ': 'Gesse',
     'poritnho': 'Portinho', 'porto': 'Portinho', 'portinho': 'Portinho',
     'bihain': 'Bihain', 'ivan': 'Ivan', 'duda': 'Duda',
     'patrick': 'Patric', 'patric': 'Patric',
@@ -9,20 +9,25 @@ const NAME_MAPPING = {
     'devid': 'Deivid', 'deivid': 'Deivid',
     'assi': 'Assis', 'assis': 'Assis',
     'justi': 'Gabriel J', 'gabriel j': 'Gabriel J',
-    'iuri': 'Iuri', 'íuri': 'Iuri',
+    'iuri': 'Iuri', 'íuri': 'Iuri', '��uri': 'Iuri',
     'admar': 'Admar', 'dudu': 'Dudu', 'gabriel': 'Gabriel',
     'pablo': 'Pablo', 'daniel': 'Daniel', 'alex': 'Alex',
     'anderson g': 'Anderson G', 'aderson': 'Aderson', 'everson': 'Everson',
-    'joão': 'João', 'caçapava': 'Caçapava', 'eliezer': 'Eliezer',
+    'joao': 'João', 'joão': 'João', 'joǜo': 'João',
+    'caçapava': 'Caçapava', 'caca': 'Caçapava', 'ca��apava': 'Caçapava',
+    'eliezer': 'Eliezer',
     'nando': 'Nando', 'dionata': 'Dionata', 'saimon': 'Saimon',
     'luciano': 'Luciano', 'brum': 'Brum', 'guilherme': 'Guilherme',
     'lacoste': 'Lacoste', 'edu': 'Edu', 'melita': 'Melita',
     'michel': 'Michel', 'raul': 'Raul', 'edevaldo': 'Edevaldo',
     'paulinho': 'Paulinho', 'natan': 'Natan', 'vinicius': 'Vinicius',
     'leonel': 'Leonel', 'luan': 'Luan', 'vitor': 'Vitor',
-    'maurício': 'Maurício', 'rodrigo': 'Rodrigo', 'maicon': 'Brum',
+    'mauricio': 'Maurício', 'maurício': 'Maurício', 'maur��cio': 'Maurício',
+    'rodrigo': 'Rodrigo', 'maicon': 'Maicon',
     'pastel': 'Pastel', 'lauro': 'Lauro', 'santiago': 'Santiago',
-    'daniel goleiro': 'Daniel Goleiro', 'ávila': 'Ávila', 'elder': 'Elder',
+    'daniel goleiro': 'Daniel Goleiro',
+    'avila': 'Ávila', 'ávila': 'Ávila', '��vila': 'Ávila',
+    'elder': 'Elder',
     'sandro': 'Sandro'
 };
 
@@ -41,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function processData(games) {
-    // Variáveis de Estatísticas
+    // Variáveis de estatísticas
     let players = {}; // Mapa de jogadores
     let teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
     let totalGoals = 0;
@@ -71,7 +76,7 @@ function processData(games) {
         teamStats.cinza.g += golsC;
         teamStats.branco.g += golsB;
 
-        // Processar Jogadores
+        // Processar jogadores
         const processPlayer = (name, team, pos, result, gp, gc) => {
             const pName = standardize(name);
             if (!players[pName]) players[pName] = { 
@@ -87,7 +92,7 @@ function processData(games) {
             if (result === 'D') { p.losses++; }
             if (result === 'E') { p.draws++; p.points += 1; }
 
-            // Stats Específicos
+            // Stats específicos
             if (pos === 'Goleiro') {
                 p.gkMatches++;
                 p.gkGoals += gc;
@@ -156,11 +161,11 @@ function processData(games) {
     // 2. Times Stats
     document.getElementById('team-stats-container').innerHTML = `
         <div class="flex justify-between items-center bg-slate-50 p-3 rounded mb-2">
-            <span class="font-bold">🏴 Cinza</span>
+            <span class="font-bold">⚙️ Cinza</span>
             <span class="text-sm">${teamStats.cinza.w}V - ${teamStats.cinza.l}D - ${teamStats.cinza.d}E (${teamStats.cinza.g} Gols)</span>
         </div>
         <div class="flex justify-between items-center bg-white border border-slate-200 p-3 rounded">
-            <span class="font-bold">🏳️ Branco</span>
+            <span class="font-bold">🏁 Branco</span>
             <span class="text-sm">${teamStats.branco.w}V - ${teamStats.branco.l}D - ${teamStats.branco.d}E (${teamStats.branco.g} Gols)</span>
         </div>
     `;
@@ -231,8 +236,7 @@ function processData(games) {
     `).join('');
 
     // H2H Simplificado (Bihain vs Daniel)
-    // Nota: Lógica completa de H2H exigiria re-iterar os jogos. Aqui vou usar os dados calculados anteriormente para exibir.
-    // Para tornar dinâmico, você precisaria adicionar a lógica de filtro no loop principal.
+    // Nota: lógica completa de H2H exigiria re-iterar os jogos. Aqui uso dados fixos.
     const h2hData = { pA: 'Bihain', winsA: 7, pB: 'Daniel', winsB: 3, draws: 2 }; 
     document.getElementById('h2h-container').innerHTML = `
         <div class="text-center"><p class="text-2xl font-bold text-blue-600">${h2hData.pA}</p><p class="text-4xl font-bold text-blue-600">${h2hData.winsA}</p><p class="text-xs text-slate-400">Vitórias</p></div>
@@ -241,7 +245,7 @@ function processData(games) {
     `;
 }
 
-// Lógica de Ordenação da Tabela HTML
+// Lógica de ordenação da tabela HTML
 function sortTable(tableId, colIndex) {
     const table = document.getElementById(tableId);
     const tbody = table.querySelector('tbody');
