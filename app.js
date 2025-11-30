@@ -1,7 +1,7 @@
 // --- CONFIGURAÇÃO DE PADRONIZAÇÃO DE NOMES ---
-// Adicione aqui variações de nomes para garantir que o sistema entenda quem é quem.
+// Usamos \uXXXX para acentuação e evitar corromper encoding.
 const NAME_MAPPING = {
-    'gesse': 'Gesse', 'gessé': 'Gesse', 'gessǸ': 'Gesse',
+    'gesse': 'Gesse', 'gess\u00e9': 'Gesse',
     'poritnho': 'Portinho', 'porto': 'Portinho', 'portinho': 'Portinho',
     'bihain': 'Bihain', 'ivan': 'Ivan', 'duda': 'Duda',
     'patrick': 'Patric', 'patric': 'Patric',
@@ -9,24 +9,24 @@ const NAME_MAPPING = {
     'devid': 'Deivid', 'deivid': 'Deivid',
     'assi': 'Assis', 'assis': 'Assis',
     'justi': 'Gabriel J', 'gabriel j': 'Gabriel J',
-    'iuri': 'Iuri', 'íuri': 'Iuri', '��uri': 'Iuri',
+    'iuri': 'Iuri', '\u00eduri': 'Iuri',
     'admar': 'Admar', 'dudu': 'Dudu', 'gabriel': 'Gabriel',
     'pablo': 'Pablo', 'daniel': 'Daniel', 'alex': 'Alex',
     'anderson g': 'Anderson G', 'aderson': 'Aderson', 'everson': 'Everson',
-    'joao': 'João', 'joão': 'João', 'joǜo': 'João',
-    'caçapava': 'Caçapava', 'caca': 'Caçapava', 'ca��apava': 'Caçapava',
+    'joao': 'Jo\u00e3o', 'jo\u00e3o': 'Jo\u00e3o',
+    'cacapava': 'Ca\u00e7apava', 'ca\u00e7apava': 'Ca\u00e7apava',
     'eliezer': 'Eliezer',
     'nando': 'Nando', 'dionata': 'Dionata', 'saimon': 'Saimon',
     'luciano': 'Luciano', 'brum': 'Brum', 'guilherme': 'Guilherme',
     'lacoste': 'Lacoste', 'edu': 'Edu', 'melita': 'Melita',
     'michel': 'Michel', 'raul': 'Raul', 'edevaldo': 'Edevaldo',
-    'paulinho': 'Paulinho', 'natan': 'Natan', 'vinicius': 'Vinicius',
+    'paulinho': 'Paulinho', 'natan': 'Natan', 'vinicius': 'Vin\u00edcius',
     'leonel': 'Leonel', 'luan': 'Luan', 'vitor': 'Vitor',
-    'mauricio': 'Maurício', 'maurício': 'Maurício', 'maur��cio': 'Maurício',
+    'mauricio': 'Maur\u00edcio', 'maur\u00edcio': 'Maur\u00edcio',
     'rodrigo': 'Rodrigo', 'maicon': 'Maicon',
     'pastel': 'Pastel', 'lauro': 'Lauro', 'santiago': 'Santiago',
     'daniel goleiro': 'Daniel Goleiro',
-    'avila': 'Ávila', 'ávila': 'Ávila', '��vila': 'Ávila',
+    'avila': '\u00c1vila', '\u00e1vila': '\u00c1vila',
     'elder': 'Elder',
     'sandro': 'Sandro'
 };
@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function parseGameDate(str) {
     const [day, month] = str.split('/').map(Number);
-    // assume ano corrente
     return new Date(new Date().getFullYear(), month - 1, day);
 }
 
@@ -106,20 +105,21 @@ function processData(games, totalAvailable = null) {
         document.getElementById('duo-worst-body').innerHTML = '';
         document.getElementById('game-select').innerHTML = '';
         document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
+        document.getElementById('streaks-container').innerHTML = '';
         return;
     }
-    const totalCatalog = totalAvailable || games.length;
+
+    const orderedGames = [...games].sort((a, b) => a.id - b.id);
+
     // Variáveis de estatísticas
-    let players = {}; // Mapa de jogadores
+    let players = {};
     let teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
     let totalGoals = 0;
     let maxGoalsGame = { val: 0, desc: '' };
     let maxDiffGame = { val: 0, desc: '' };
-    let duos = {}; // Para calcular sinergia
+    let duos = {};
 
-    // Processar cada jogo
-    const orderedGames = [...games].sort((a,b) => a.id - b.id);
-
+    // Processar cada jogo em ordem
     orderedGames.forEach(game => {
         const golsC = game.placar.cinza;
         const golsB = game.placar.branco;
@@ -127,12 +127,9 @@ function processData(games, totalAvailable = null) {
         const diff = Math.abs(golsC - golsB);
 
         totalGoals += totalGameGoals;
-
-        // KPIs
         if (totalGameGoals > maxGoalsGame.val) maxGoalsGame = { val: totalGameGoals, desc: `${game.data} (${golsC}x${golsB})` };
         if (diff > maxDiffGame.val) maxDiffGame = { val: diff, desc: `${game.data} (${Math.max(golsC, golsB)}x${Math.min(golsC, golsB)})` };
 
-        // Resultado
         let resCinza, resBranco;
         if (golsC > golsB) { resCinza = 'V'; resBranco = 'D'; teamStats.cinza.w++; teamStats.branco.l++; }
         else if (golsB > golsC) { resCinza = 'D'; resBranco = 'V'; teamStats.cinza.l++; teamStats.branco.w++; }
@@ -141,20 +138,19 @@ function processData(games, totalAvailable = null) {
         teamStats.cinza.g += golsC;
         teamStats.branco.g += golsB;
 
-        // Processar jogadores
         const processPlayer = (name, team, pos, result, gp, gc) => {
             const pName = standardize(name);
-            if (!players[pName]) players[pName] = { 
-                name: pName, 
+            if (!players[pName]) players[pName] = {
+                name: pName,
                 matches: 0, wins: 0, losses: 0, draws: 0, points: 0,
                 gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0,
                 lineMatches: 0, linePoints: 0,
                 lastResults: [],
                 currentUnbeaten: 0, bestUnbeaten: 0,
                 currentWin: 0, bestWin: 0,
-                currentNoWin: 0, bestNoWin: 0
+                currentNoWin: 0
             };
-            
+
             const p = players[pName];
             p.matches++;
             if (result === 'V') { p.wins++; p.points += 3; }
@@ -179,12 +175,11 @@ function processData(games, totalAvailable = null) {
 
             if (result !== 'V') {
                 p.currentNoWin++;
-                if (p.currentNoWin > p.bestNoWin) p.bestNoWin = p.currentNoWin;
             } else {
                 p.currentNoWin = 0;
             }
 
-            // Stats específicos
+            // Específico de posição
             if (pos === 'Goleiro') {
                 p.gkMatches++;
                 p.gkGoals += gc;
@@ -198,7 +193,6 @@ function processData(games, totalAvailable = null) {
             }
         };
 
-        // Duplas (apenas linha)
         const processDuos = (lineArray, result) => {
             const stdNames = lineArray.map(n => standardize(n)).sort();
             const pts = (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
@@ -223,13 +217,11 @@ function processData(games, totalAvailable = null) {
         processDuos(game.branco.linha, resBranco);
     });
 
-    // Converter objeto players para array
     const playersArr = Object.values(players);
 
     // --- RENDERIZAÇÃO ---
-    
-    // 1. KPIs
-    const kpisHTML = `
+    // KPIs
+    document.getElementById('kpis-container').innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h4 class="text-xs font-bold text-slate-400 uppercase">Jogos</h4>
             <p class="text-3xl font-bold text-slate-800 mt-1">${games.length}</p>
@@ -237,7 +229,7 @@ function processData(games, totalAvailable = null) {
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h4 class="text-xs font-bold text-slate-400 uppercase">Total Gols</h4>
             <p class="text-3xl font-bold text-blue-600 mt-1">${totalGoals}</p>
-            <p class="text-xs text-slate-500 mt-1">Média: ${(totalGoals/games.length).toFixed(2)}</p>
+            <p class="text-xs text-slate-500 mt-1">M\u00e9dia: ${(totalGoals/games.length).toFixed(2)}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h4 class="text-xs font-bold text-slate-400 uppercase">Jogo + Movimentado</h4>
@@ -250,10 +242,9 @@ function processData(games, totalAvailable = null) {
             <p class="text-xs text-slate-500 mt-1">${maxDiffGame.desc}</p>
         </div>
     `;
-    document.getElementById('kpis-container').innerHTML = kpisHTML;
     document.getElementById('last-update').innerText = `Atualizado: ${new Date().toLocaleDateString()}`;
 
-    // 2. Times Stats
+    // Times
     document.getElementById('team-stats-container').innerHTML = `
         <div class="flex justify-between items-center bg-slate-50 p-3 rounded mb-2">
             <span class="font-bold flex items-center gap-2"><span class="inline-block h-3 w-3 rounded-full bg-slate-700"></span>Cinza</span>
@@ -265,9 +256,19 @@ function processData(games, totalAvailable = null) {
         </div>
     `;
 
-    // 3. Ranking Geral
+    // Helper para forma recente (bolinhas coloridas)
+    const renderForm = (results) => {
+        const last = results.slice(-5);
+        if (last.length === 0) return '';
+        return last.map(r => {
+            const color = r === 'V' ? 'bg-green-500' : (r === 'E' ? 'bg-slate-400' : 'bg-red-500');
+            return `<span class="inline-block h-2.5 w-2.5 rounded-full ${color}"></span>`;
+        }).join(' ');
+    };
+
+    // Ranking
     const sortedRanking = [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins);
-    const rankingHTML = sortedRanking.map(p => `
+    document.getElementById('ranking-body').innerHTML = sortedRanking.map(p => `
         <tr class="hover:bg-slate-50 transition">
             <td class="px-6 py-3 whitespace-nowrap font-medium text-slate-700">${p.name}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-500">${p.matches}</td>
@@ -275,14 +276,11 @@ function processData(games, totalAvailable = null) {
             <td class="px-6 py-3 whitespace-nowrap text-red-500">${p.losses}</td>
             <td class="px-6 py-3 whitespace-nowrap text-blue-500">${p.draws}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-900 font-bold text-lg">${p.points}</td>
-            <td class="px-6 py-3 whitespace-nowrap text-slate-500 text-lg">
-                ${p.lastResults.slice(-5).map(r => r === 'V' ? '✅' : (r === 'E' ? '➖' : '❌')).join(' ')}
-            </td>
+            <td class="px-6 py-3 whitespace-nowrap text-slate-500 text-lg">${renderForm(p.lastResults)}</td>
         </tr>
     `).join('');
-    document.getElementById('ranking-body').innerHTML = rankingHTML;
 
-    // 4. Goleiros
+    // Goleiros
     const gkArr = playersArr.filter(p => p.gkMatches > 0).sort((a,b) => (a.gkGoals/a.gkMatches) - (b.gkGoals/b.gkMatches));
     document.getElementById('gk-body').innerHTML = gkArr.map(p => {
         const media = p.gkMatches >= 5 ? (p.gkGoals / p.gkMatches).toFixed(2) : '-';
@@ -297,7 +295,7 @@ function processData(games, totalAvailable = null) {
     `;
     }).join('');
 
-    // 5. Linha (Min 10 jogos)
+    // Linha
     const lineArr = playersArr.filter(p => p.lineMatches >= 10).sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches));
     document.getElementById('line-body').innerHTML = lineArr.map(p => `
         <tr class="hover:bg-slate-50">
@@ -308,18 +306,13 @@ function processData(games, totalAvailable = null) {
         </tr>
     `).join('');
 
-    // 6. Duplas
+    // Duplas
     const duoBase = Object.entries(duos)
         .map(([name, stats]) => ({ name, ...stats, ppg: stats.points/stats.games }))
         .filter(d => d.games >= 10);
 
-    const bestDuos = [...duoBase]
-        .sort((a,b) => b.ppg - a.ppg)
-        .slice(0, 5); // Top 5 melhores
-
-    const worstDuos = [...duoBase]
-        .sort((a,b) => a.ppg - b.ppg)
-        .slice(0, 5); // Top 5 piores
+    const bestDuos = [...duoBase].sort((a,b) => b.ppg - a.ppg).slice(0, 5);
+    const worstDuos = [...duoBase].sort((a,b) => a.ppg - b.ppg).slice(0, 5);
 
     document.getElementById('duo-body').innerHTML = bestDuos.map(d => `
         <tr>
@@ -337,65 +330,49 @@ function processData(games, totalAvailable = null) {
         </tr>
     `).join('');
 
-    // Últimos jogos (selecionável)
-    const gamesById = [...games].sort((a, b) => a.id - b.id);
+    // Últimos jogos
+    const gamesById = [...orderedGames];
     const gameSelect = document.getElementById('game-select');
-    gameSelect.innerHTML = gamesById
-        .slice()
-        .reverse()
-        .map(g => `<option value="${g.id}">Jogo ${g.id} - ${g.data} (${g.placar.cinza}x${g.placar.branco})</option>`)
-        .join('');
+    gameSelect.innerHTML = gamesById.slice().reverse().map(g => `<option value="${g.id}">Jogo ${g.id} - ${g.data} (${g.placar.cinza}x${g.placar.branco})</option>`).join('');
+
+    const renderTeamCard = (team, label, colors) => `
+        <div class="rounded-lg p-4 border" style="background:${colors.bg}; border-color:${colors.border};">
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold" style="color:${colors.text};">${label}</p>
+                <span class="text-xs bg-white px-2 py-1 rounded border" style="color:${colors.text}; border-color:${colors.border};">Goleiro: ${standardize(team.goleiro)}</span>
+            </div>
+            <p class="text-xs uppercase mb-1" style="color:${colors.muted};">Linha</p>
+            <div class="flex flex-wrap gap-2 text-sm">
+                ${team.linha.map(p => `<span class="px-2 py-1 bg-white border rounded" style="border-color:${colors.border};">${standardize(p)}</span>`).join('')}
+            </div>
+        </div>
+    `;
 
     const renderGame = (game) => {
-        const renderTeam = (team, label, palette) => `
-            <div class="bg-${palette}-50 border border-${palette}-200 rounded-lg p-4">
-                <div class="flex items-center justify-between mb-2">
-                    <p class="text-sm font-semibold text-${palette}-700">${label}</p>
-                    <span class="text-xs bg-white border border-${palette}-200 text-${palette}-700 px-2 py-1 rounded">Goleiro: ${standardize(team.goleiro)}</span>
-                </div>
-                <p class="text-xs uppercase text-${palette}-500 mb-1">Linha</p>
-                <div class="flex flex-wrap gap-2 text-sm">
-                    ${team.linha.map(p => `<span class="px-2 py-1 bg-white border border-${palette}-200 rounded">${standardize(p)}</span>`).join('')}
-                </div>
-            </div>
-        `;
-
         document.getElementById('game-score').innerHTML = `
             <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${game.data}</p>
-                <p class="text-3xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
+                <p class="text-2xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
                 <p class="text-sm text-slate-500">Resultado mais recente</p>
             </div>
-            ${renderTeam(game.cinza, 'Time Cinza', 'slate')}
-            ${renderTeam(game.branco, 'Time Branco', 'amber')}
+            ${renderTeamCard(game.cinza, 'Time Cinza', { bg:'#f8fafc', border:'#cbd5e1', text:'#0f172a', muted:'#64748b' })}
+            ${renderTeamCard(game.branco, 'Time Branco', { bg:'#fff7ed', border:'#fbbf24', text:'#92400e', muted:'#b45309' })}
         `;
     };
 
     renderGame(gamesById[gamesById.length - 1]);
-
     gameSelect.addEventListener('change', (e) => {
         const selected = gamesById.find(g => g.id === parseInt(e.target.value, 10));
         if (selected) renderGame(selected);
     });
 
-    // Streaks (melhor invencibilidade, melhor sequência de vitórias, maior seca atual)
+    // Streaks
     const freqThreshold = 10;
-    const unbeatenLeader = playersArr.reduce((best, p) => {
-        if (p.bestUnbeaten > (best?.bestUnbeaten || 0)) return p;
-        return best;
-    }, null);
-
-    const winLeader = playersArr.reduce((best, p) => {
-        if (p.bestWin > (best?.bestWin || 0)) return p;
-        return best;
-    }, null);
-
+    const unbeatenLeader = playersArr.reduce((best, p) => p.bestUnbeaten > (best?.bestUnbeaten || 0) ? p : best, null);
+    const winLeader = playersArr.reduce((best, p) => p.bestWin > (best?.bestWin || 0) ? p : best, null);
     const droughtLeader = playersArr
         .filter(p => p.matches >= freqThreshold)
-        .reduce((best, p) => {
-            if (!best || p.currentNoWin > best.currentNoWin) return p;
-            return best;
-        }, null);
+        .reduce((best, p) => (!best || p.currentNoWin > best.currentNoWin) ? p : best, null);
 
     document.getElementById('streaks-container').innerHTML = `
         <div class="bg-white border border-slate-200 rounded-lg p-4">
@@ -404,19 +381,19 @@ function processData(games, totalAvailable = null) {
             <p class="text-sm text-slate-500">${unbeatenLeader ? `${unbeatenLeader.bestUnbeaten} jogos sem perder` : 'Sem dados'}</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
-            <p class="text-xs uppercase text-slate-500 font-semibold">Maior Sequência de Vitórias</p>
+            <p class="text-xs uppercase text-slate-500 font-semibold">Maior Sequ\u00eancia de Vit\u00f3rias</p>
             <p class="text-lg font-bold text-slate-800 mt-1">${winLeader ? winLeader.name : '-'}</p>
-            <p class="text-sm text-slate-500">${winLeader ? `${winLeader.bestWin} vitórias seguidas` : 'Sem dados'}</p>
+            <p class="text-sm text-slate-500">${winLeader ? `${winLeader.bestWin} vit\u00f3rias seguidas` : 'Sem dados'}</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
-            <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vitórias (freq. ≥ ${freqThreshold})</p>
+            <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vit\u00f3rias (freq. \u2265 ${freqThreshold})</p>
             <p class="text-lg font-bold text-slate-800 mt-1">${droughtLeader ? droughtLeader.name : '-'}</p>
             <p class="text-sm text-slate-500">${droughtLeader ? `${droughtLeader.currentNoWin} jogos sem vencer` : 'Sem dados'}</p>
         </div>
     `;
 }
 
-// Lógica de ordenação da tabela HTML
+// Ordenação de tabelas
 function sortTable(tableId, colIndex) {
     const table = document.getElementById(tableId);
     const tbody = table.querySelector('tbody');
