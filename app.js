@@ -38,14 +38,77 @@ function standardize(name) {
 }
 
 // --- CARREGAMENTO DE DADOS ---
+let originalGames = [];
+
 document.addEventListener('DOMContentLoaded', () => {
     fetch('games.json')
         .then(response => response.json())
-        .then(data => processData(data))
+        .then(data => {
+            originalGames = data;
+            setupFilters();
+            applyFilter();
+        })
         .catch(error => console.error('Erro ao carregar dados:', error));
 });
 
-function processData(games) {
+function parseGameDate(str) {
+    const [day, month] = str.split('/').map(Number);
+    // assume ano corrente
+    return new Date(new Date().getFullYear(), month - 1, day);
+}
+
+function setupFilters() {
+    const startInput = document.getElementById('filter-start');
+    const endInput = document.getElementById('filter-end');
+    const clearBtn = document.getElementById('filter-clear');
+
+    const onChange = () => applyFilter();
+    startInput.addEventListener('change', onChange);
+    endInput.addEventListener('change', onChange);
+    clearBtn.addEventListener('click', () => {
+        startInput.value = '';
+        endInput.value = '';
+        applyFilter();
+    });
+}
+
+function applyFilter() {
+    const startInput = document.getElementById('filter-start');
+    const endInput = document.getElementById('filter-end');
+    const start = startInput.value ? new Date(startInput.value) : null;
+    const end = endInput.value ? new Date(endInput.value) : null;
+
+    const filtered = originalGames.filter(g => {
+        const gd = parseGameDate(g.data);
+        if (start && gd < start) return false;
+        if (end && gd > end) return false;
+        return true;
+    });
+
+    const info = document.getElementById('filter-info');
+    if (start || end) {
+        info.textContent = `Mostrando ${filtered.length} de ${originalGames.length} jogos`;
+    } else {
+        info.textContent = 'Mostrando todos os jogos';
+    }
+
+    processData(filtered, originalGames.length);
+}
+
+function processData(games, totalAvailable = null) {
+    if (!Array.isArray(games) || games.length === 0) {
+        document.getElementById('kpis-container').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo no período selecionado.</p>';
+        document.getElementById('team-stats-container').innerHTML = '';
+        document.getElementById('ranking-body').innerHTML = '';
+        document.getElementById('gk-body').innerHTML = '';
+        document.getElementById('line-body').innerHTML = '';
+        document.getElementById('duo-body').innerHTML = '';
+        document.getElementById('duo-worst-body').innerHTML = '';
+        document.getElementById('game-select').innerHTML = '';
+        document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
+        return;
+    }
+    const totalCatalog = totalAvailable || games.length;
     // Variáveis de estatísticas
     let players = {}; // Mapa de jogadores
     let teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
@@ -186,14 +249,17 @@ function processData(games) {
 
     // 4. Goleiros
     const gkArr = playersArr.filter(p => p.gkMatches > 0).sort((a,b) => (a.gkGoals/a.gkMatches) - (b.gkGoals/b.gkMatches));
-    document.getElementById('gk-body').innerHTML = gkArr.map(p => `
+    document.getElementById('gk-body').innerHTML = gkArr.map(p => {
+        const media = p.gkMatches >= 5 ? (p.gkGoals / p.gkMatches).toFixed(2) : '-';
+        return `
         <tr class="hover:bg-slate-50">
             <td class="px-4 py-2 font-medium">${p.name}</td>
             <td class="px-4 py-2">${p.gkMatches}</td>
             <td class="px-4 py-2">${p.gkGoals}</td>
-            <td class="px-4 py-2 font-bold">${(p.gkGoals / p.gkMatches).toFixed(2)}</td>
+            <td class="px-4 py-2 font-bold">${media}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 
     // 5. Linha (Min 10 jogos)
     const lineArr = playersArr.filter(p => p.lineMatches >= 10).sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches));
@@ -245,12 +311,15 @@ function processData(games) {
         .join('');
 
     const renderGame = (game) => {
-        const renderTeam = (team, color) => `
-            <div class="bg-${color}-50 border border-${color}-200 rounded-lg p-4">
-                <p class="text-sm font-semibold text-${color}-700 mb-2">Goleiro: ${standardize(team.goleiro)}</p>
-                <p class="text-xs uppercase text-${color}-500 mb-1">Linha</p>
+        const renderTeam = (team, label, palette) => `
+            <div class="bg-${palette}-50 border border-${palette}-200 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-sm font-semibold text-${palette}-700">${label}</p>
+                    <span class="text-xs bg-white border border-${palette}-200 text-${palette}-700 px-2 py-1 rounded">Goleiro: ${standardize(team.goleiro)}</span>
+                </div>
+                <p class="text-xs uppercase text-${palette}-500 mb-1">Linha</p>
                 <div class="flex flex-wrap gap-2 text-sm">
-                    ${team.linha.map(p => `<span class="px-2 py-1 bg-white border border-${color}-200 rounded">${standardize(p)}</span>`).join('')}
+                    ${team.linha.map(p => `<span class="px-2 py-1 bg-white border border-${palette}-200 rounded">${standardize(p)}</span>`).join('')}
                 </div>
             </div>
         `;
@@ -258,11 +327,11 @@ function processData(games) {
         document.getElementById('game-score').innerHTML = `
             <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-4">
                 <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${game.data}</p>
-                <p class="text-4xl font-bold text-slate-800 my-2">${game.placar.cinza} x ${game.placar.branco}</p>
-                <p class="text-sm text-slate-500">Cinza vs Branco</p>
+                <p class="text-4xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
+                <p class="text-sm text-slate-500">Resultado mais recente</p>
             </div>
-            ${renderTeam(game.cinza, 'blue')}
-            ${renderTeam(game.branco, 'amber')}
+            ${renderTeam(game.cinza, 'Time Cinza', 'slate')}
+            ${renderTeam(game.branco, 'Time Branco', 'amber')}
         `;
     };
 
