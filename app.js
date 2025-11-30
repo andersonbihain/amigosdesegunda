@@ -20,7 +20,7 @@ const NAME_MAPPING = {
     'michel': 'Michel', 'raul': 'Raul', 'edevaldo': 'Edevaldo',
     'paulinho': 'Paulinho', 'natan': 'Natan', 'vinicius': 'Vinicius',
     'leonel': 'Leonel', 'luan': 'Luan', 'vitor': 'Vitor',
-    'maurício': 'Maurício', 'rodrigo': 'Rodrigo', 'maicon': 'Maicon',
+    'maurício': 'Maurício', 'rodrigo': 'Rodrigo', 'maicon': 'Brum',
     'pastel': 'Pastel', 'lauro': 'Lauro', 'santiago': 'Santiago',
     'daniel goleiro': 'Daniel Goleiro', 'ávila': 'Ávila', 'elder': 'Elder',
     'sandro': 'Sandro'
