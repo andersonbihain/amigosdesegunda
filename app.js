@@ -1,5 +1,4 @@
-// --- CONFIGURAÇÃO DE PADRONIZAÇÃO DE NOMES ---
-// Usamos \uXXXX para acentuação e evitar corromper encoding.
+// --- PADRONIZAÇÃO DE NOMES (usar \uXXXX para acentos) ---
 const NAME_MAPPING = {
     'gesse': 'Gesse', 'gess\u00e9': 'Gesse',
     'poritnho': 'Portinho', 'porto': 'Portinho', 'portinho': 'Portinho',
@@ -37,27 +36,26 @@ function standardize(name) {
     return NAME_MAPPING[lower] || name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-// --- CARREGAMENTO DE DADOS ---
+// --- ESTADO GLOBAL ---
 let originalGames = [];
 let dateValues = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     fetch('games.json')
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             originalGames = data;
             initDateFilter();
             applyFilter();
         })
-        .catch(error => console.error('Erro ao carregar dados:', error));
+        .catch(err => console.error('Erro ao carregar dados:', err));
 });
 
+// --- FILTRO DE DATA (SLIDERS) ---
 function initDateFilter() {
-    const ordered = [...originalGames].sort((a,b) => a.id - b.id);
+    const ordered = [...originalGames].sort((a, b) => a.id - b.id);
     dateValues = [];
-    ordered.forEach(g => {
-        if (!dateValues.includes(g.data)) dateValues.push(g.data);
-    });
+    ordered.forEach(g => { if (!dateValues.includes(g.data)) dateValues.push(g.data); });
 
     const startRange = document.getElementById('filter-start-range');
     const endRange = document.getElementById('filter-end-range');
@@ -81,7 +79,6 @@ function initDateFilter() {
         updateLabels();
         applyFilter();
     };
-
     startRange.addEventListener('input', onInput);
     endRange.addEventListener('input', onInput);
 }
@@ -92,7 +89,6 @@ function applyFilter() {
 
     const filtered = originalGames.filter(g => {
         const idx = dateValues.indexOf(g.data);
-        if (idx === -1) return false;
         return idx >= startIdx && idx <= endIdx;
     });
 
@@ -103,10 +99,11 @@ function applyFilter() {
         info.textContent = 'Mostrando todos os jogos';
     }
 
-    processData(filtered, originalGames.length);
+    processData(filtered);
 }
 
-function processData(games, totalAvailable = null) {
+// --- PROCESSAMENTO E RENDERIZAÇÃO ---
+function processData(games) {
     if (!Array.isArray(games) || games.length === 0) {
         document.getElementById('kpis-container').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo no período selecionado.</p>';
         document.getElementById('team-stats-container').innerHTML = '';
@@ -122,8 +119,6 @@ function processData(games, totalAvailable = null) {
     }
 
     const orderedGames = [...games].sort((a, b) => a.id - b.id);
-
-    // Variáveis de estatísticas
     let players = {};
     let teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
     let totalGoals = 0;
@@ -131,7 +126,6 @@ function processData(games, totalAvailable = null) {
     let maxDiffGame = { val: 0, desc: '' };
     let duos = {};
 
-    // Processar cada jogo em ordem
     orderedGames.forEach(game => {
         const golsC = game.placar.cinza;
         const golsB = game.placar.branco;
@@ -170,28 +164,25 @@ function processData(games, totalAvailable = null) {
             if (result === 'E') { p.draws++; p.points += 1; }
             p.lastResults.push(result);
 
-            // Streaks
+            // streaks
             if (result === 'V' || result === 'E') {
                 p.currentUnbeaten++;
                 if (p.currentUnbeaten > p.bestUnbeaten) p.bestUnbeaten = p.currentUnbeaten;
             } else {
                 p.currentUnbeaten = 0;
             }
-
             if (result === 'V') {
                 p.currentWin++;
                 if (p.currentWin > p.bestWin) p.bestWin = p.currentWin;
             } else {
                 p.currentWin = 0;
             }
-
             if (result !== 'V') {
                 p.currentNoWin++;
             } else {
                 p.currentNoWin = 0;
             }
 
-            // Específico de posição
             if (pos === 'Goleiro') {
                 p.gkMatches++;
                 p.gkGoals += gc;
@@ -218,12 +209,10 @@ function processData(games, totalAvailable = null) {
             }
         };
 
-        // Time Cinza
         processPlayer(game.cinza.goleiro, 'Cinza', 'Goleiro', resCinza, golsC, golsB);
         game.cinza.linha.forEach(p => processPlayer(p, 'Cinza', 'Linha', resCinza, golsC, golsB));
         processDuos(game.cinza.linha, resCinza);
 
-        // Time Branco
         processPlayer(game.branco.goleiro, 'Branco', 'Goleiro', resBranco, golsB, golsC);
         game.branco.linha.forEach(p => processPlayer(p, 'Branco', 'Linha', resBranco, golsB, golsC));
         processDuos(game.branco.linha, resBranco);
@@ -231,7 +220,6 @@ function processData(games, totalAvailable = null) {
 
     const playersArr = Object.values(players);
 
-    // --- RENDERIZAÇÃO ---
     // KPIs
     document.getElementById('kpis-container').innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
@@ -268,7 +256,7 @@ function processData(games, totalAvailable = null) {
         </div>
     `;
 
-    // Helper para forma recente (bolinhas coloridas)
+    // Forma recente
     const renderForm = (results) => {
         const last = results.slice(-5);
         if (last.length === 0) return '';
@@ -322,7 +310,6 @@ function processData(games, totalAvailable = null) {
     const duoBase = Object.entries(duos)
         .map(([name, stats]) => ({ name, ...stats, ppg: stats.points/stats.games }))
         .filter(d => d.games >= 10);
-
     const bestDuos = [...duoBase].sort((a,b) => b.ppg - a.ppg).slice(0, 5);
     const worstDuos = [...duoBase].sort((a,b) => a.ppg - b.ppg).slice(0, 5);
 
@@ -333,7 +320,6 @@ function processData(games, totalAvailable = null) {
             <td class="px-6 py-3 font-bold text-green-600">${d.ppg.toFixed(2)}</td>
         </tr>
     `).join('');
-
     document.getElementById('duo-worst-body').innerHTML = worstDuos.map(d => `
         <tr>
             <td class="px-6 py-3 font-medium text-slate-700">${d.name}</td>
