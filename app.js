@@ -1,6 +1,6 @@
 // --- PADRONIZAÇÃO DE NOMES (usar \uXXXX para acentos) ---
 const NAME_MAPPING = {
-    'gesse': 'Gesse', 'gess\u00e9': 'Gesse',
+    'gesse': 'Gesse', 'gess\u00e9': 'Gesse', 'gess\u0178': 'Gess\u00e9', 'gess\u00bf': 'Gess\u00e9',
     'poritnho': 'Portinho', 'porto': 'Portinho', 'portinho': 'Portinho',
     'bihain': 'Bihain', 'ivan': 'Ivan', 'duda': 'Duda',
     'patrick': 'Patric', 'patric': 'Patric',
@@ -12,8 +12,8 @@ const NAME_MAPPING = {
     'admar': 'Admar', 'dudu': 'Dudu', 'gabriel': 'Gabriel',
     'pablo': 'Pablo', 'daniel': 'Daniel', 'alex': 'Alex',
     'anderson g': 'Anderson G', 'aderson': 'Aderson', 'everson': 'Everson',
-    'joao': 'Jo\u00e3o', 'jo\u00e3o': 'Jo\u00e3o',
-    'cacapava': 'Ca\u00e7apava', 'ca\u00e7apava': 'Ca\u00e7apava',
+    'joao': 'Jo\u00e3o', 'jo\u00e3o': 'Jo\u00e3o', 'jo\u01dco': 'Jo\u00e3o',
+    'cacapava': 'Ca\u00e7apava', 'ca\u00e7apava': 'Ca\u00e7apava', 'ca\ufffd\ufffdapava': 'Ca\u00e7apava',
     'eliezer': 'Eliezer',
     'nando': 'Nando', 'dionata': 'Dionata', 'saimon': 'Saimon',
     'luciano': 'Luciano', 'brum': 'Brum', 'guilherme': 'Guilherme',
@@ -25,7 +25,7 @@ const NAME_MAPPING = {
     'rodrigo': 'Rodrigo', 'maicon': 'Maicon',
     'pastel': 'Pastel', 'lauro': 'Lauro', 'santiago': 'Santiago',
     'daniel goleiro': 'Daniel Goleiro',
-    'avila': '\u00c1vila', '\u00e1vila': '\u00c1vila',
+    'avila': '\u00c1vila', '\u00e1vila': '\u00c1vila', '\ufffd\ufffdvila': '\u00c1vila', '\ufffdvila': '\u00c1vila',
     'elder': 'Elder',
     'sandro': 'Sandro'
 };
