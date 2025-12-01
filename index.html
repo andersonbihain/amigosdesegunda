@@ -43,9 +43,11 @@
                 </div>
             </div>
             <div class="flex flex-col gap-2">
-                <input type="range" id="filter-start-range" min="0" max="0" value="0" class="w-full accent-blue-600">
-                <input type="range" id="filter-end-range" min="0" max="0" value="0" class="w-full accent-blue-600">
-                <p class="text-xs text-slate-500">Ajuste os controles para definir o intervalo desejado.</p>
+                <div class="range-dual">
+                    <input type="range" id="filter-start-range" min="0" max="0" value="0" class="range-dual-input">
+                    <input type="range" id="filter-end-range" min="0" max="0" value="0" class="range-dual-input">
+                </div>
+                <p class="text-xs text-slate-500">Ajuste a barra para definir o intervalo desejado.</p>
             </div>
         </div>
         

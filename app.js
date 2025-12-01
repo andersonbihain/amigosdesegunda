@@ -70,13 +70,23 @@ function initDateFilter() {
         startLabel.textContent = dateValues[startRange.value] || '-';
         endLabel.textContent = dateValues[endRange.value] || '-';
     };
+    const updateTrackFill = () => {
+        const max = maxIdx || 1;
+        const p1 = (parseInt(startRange.value,10) / max) * 100;
+        const p2 = (parseInt(endRange.value,10) / max) * 100;
+        const gradient = `linear-gradient(90deg, #e2e8f0 0%, #e2e8f0 ${p1}%, #bfdbfe ${p1}%, #bfdbfe ${p2}%, #e2e8f0 ${p2}%, #e2e8f0 100%)`;
+        startRange.style.background = gradient;
+        endRange.style.background = gradient;
+    };
     updateLabels();
+    updateTrackFill();
 
     const onInput = () => {
         if (parseInt(startRange.value, 10) > parseInt(endRange.value, 10)) {
             startRange.value = endRange.value;
         }
         updateLabels();
+        updateTrackFill();
         applyFilter();
     };
     startRange.addEventListener('input', onInput);
