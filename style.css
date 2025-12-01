@@ -63,3 +63,48 @@ tr {
     border: 2px solid #fff;
     box-shadow: 0 0 0 1px #cbd5e1;
 }
+
+/* Slider duplo em uma barra */
+.range-dual {
+    position: relative;
+    height: 28px;
+}
+.range-dual-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+    -webkit-appearance: none;
+    background: transparent;
+}
+.range-dual-input::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e2e8f0 0%, #bfdbfe 0%, #bfdbfe 0%, #e2e8f0 0%);
+}
+.range-dual-input::-webkit-slider-thumb {
+    pointer-events: all;
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #1d4ed8;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #cbd5e1;
+    margin-top: -5px;
+}
+.range-dual-input::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e2e8f0 0%, #bfdbfe 0%, #bfdbfe 0%, #e2e8f0 0%);
+}
+.range-dual-input::-moz-range-thumb {
+    pointer-events: all;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: #1d4ed8;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #cbd5e1;
+}

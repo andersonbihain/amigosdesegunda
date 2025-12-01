@@ -50,6 +50,45 @@
                 <p class="text-xs text-slate-500">Ajuste a barra para definir o intervalo desejado.</p>
             </div>
         </div>
+
+        <!-- Novo jogo (não persiste após recarregar) -->
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8">
+            <div class="flex flex-col gap-2 mb-4">
+                <h3 class="text-lg font-bold text-slate-800">Adicionar novo jogo (somente nesta sessão)</h3>
+                <p class="text-xs text-slate-500">Use os nomes já existentes para montar os elencos e inserir o placar.</p>
+                <p id="add-game-status" class="text-xs text-amber-600"></p>
+            </div>
+            <form id="add-game-form" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Data
+                        <input type="date" id="add-date" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Placar Cinza
+                        <input type="number" id="add-score-cinza" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Goleiro Cinza
+                        <select id="add-gk-cinza" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Linha Cinza (múltipla)
+                        <select id="add-line-cinza" multiple size="6" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Placar Branco
+                        <input type="number" id="add-score-branco" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Goleiro Branco
+                        <select id="add-gk-branco" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Linha Branco (múltipla)
+                        <select id="add-line-branco" multiple size="6" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-blue-700 transition">Adicionar jogo</button>
+                    </div>
+                </div>
+            </form>
+        </div>
         
         <!-- KPIs (Cards Superiores) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="kpis-container">
