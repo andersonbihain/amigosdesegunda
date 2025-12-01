@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FutStats - Cadastro de Jogos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans">
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+                <div class="flex items-center">
+                    <img src="logo.png" alt="Escudo" class="h-8 w-8 mr-2 rounded-full border border-blue-800 object-cover">
+                    <span class="text-lg font-bold">Cadastro de Jogos</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="index.html" class="text-xs font-semibold bg-white text-blue-900 px-3 py-1.5 rounded shadow hover:bg-blue-50">Voltar ao dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8">
+            <div class="flex flex-col gap-2 mb-4">
+                <h1 class="text-xl font-bold text-slate-800">Adicionar novo jogo</h1>
+                <p class="text-xs text-slate-500">Os dados são aplicados só nesta sessão (não gravam no arquivo). Ao recarregar, somem.</p>
+                <p id="add-game-status" class="text-xs text-amber-600"></p>
+            </div>
+            <form id="add-game-form" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Data
+                        <input type="date" id="add-date" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Placar Cinza
+                        <input type="number" id="add-score-cinza" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Goleiro Cinza
+                        <select id="add-gk-cinza" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Linha Cinza (múltipla)
+                        <select id="add-line-cinza" multiple size="8" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Placar Branco
+                        <input type="number" id="add-score-branco" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Goleiro Branco
+                        <select id="add-gk-branco" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="block text-xs font-semibold uppercase text-slate-500">Linha Branco (múltipla)
+                        <select id="add-line-branco" multiple size="8" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-blue-700 transition">Adicionar jogo</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <h2 class="text-lg font-bold text-slate-800 mb-2">Pré-visualização do JSON a inserir</h2>
+            <p class="text-xs text-slate-500 mb-2">Copie e cole em games.json se quiser persistir manualmente.</p>
+            <pre id="json-preview" class="text-xs bg-slate-50 border border-slate-200 rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
+        </div>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>
