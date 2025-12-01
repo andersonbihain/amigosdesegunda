@@ -1,8 +1,41 @@
 // Carrega jogos e nomes para o formulário
 let gamesAdmin = [];
 let playerOptionsAdmin = [];
+const ADMIN_PASSWORD = 'mudeseusenhaaqui'; // troque aqui a senha
 
 document.addEventListener('DOMContentLoaded', () => {
+    initLock();
+});
+
+function initLock() {
+    const lockForm = document.getElementById('admin-lock-form');
+    const lockInput = document.getElementById('admin-lock-input');
+    const errorEl = document.getElementById('admin-lock-error');
+    const stored = sessionStorage.getItem('admin_unlocked');
+    if (stored === '1') {
+        unlock();
+        return;
+    }
+    lockForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (lockInput.value === ADMIN_PASSWORD) {
+            sessionStorage.setItem('admin_unlocked', '1');
+            unlock();
+        } else {
+            errorEl.textContent = 'Senha incorreta.';
+        }
+    });
+}
+
+function unlock() {
+    const lock = document.getElementById('admin-lock');
+    const content = document.getElementById('admin-content');
+    if (lock) lock.classList.add('hidden');
+    if (content) content.classList.remove('hidden');
+    loadGamesAdmin();
+}
+
+function loadGamesAdmin() {
     fetch('games.json')
         .then(res => res.json())
         .then(data => {
@@ -11,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initFormAdmin();
         })
         .catch(err => console.error('Erro ao carregar jogos:', err));
-});
+}
 
 function standardizeAdmin(name) {
     if (!name) return 'Desconhecido';
