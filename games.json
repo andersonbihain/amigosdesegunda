@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "data": "20/01",
+    "data": "20/01/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -33,7 +33,7 @@
   },
   {
     "id": 2,
-    "data": "27/01",
+    "data": "27/01/2025",
     "cinza": {
       "goleiro": "Luciano",
       "linha": [
@@ -65,7 +65,7 @@
   },
   {
     "id": 3,
-    "data": "03/02",
+    "data": "03/02/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -97,7 +97,7 @@
   },
   {
     "id": 4,
-    "data": "10/02",
+    "data": "10/02/2025",
     "cinza": {
       "goleiro": "Dionata",
       "linha": [
@@ -129,7 +129,7 @@
   },
   {
     "id": 5,
-    "data": "17/02",
+    "data": "17/02/2025",
     "cinza": {
       "goleiro": "Gabriel",
       "linha": [
@@ -161,7 +161,7 @@
   },
   {
     "id": 6,
-    "data": "24/02",
+    "data": "24/02/2025",
     "cinza": {
       "goleiro": "Dudu",
       "linha": [
@@ -193,7 +193,7 @@
   },
   {
     "id": 7,
-    "data": "03/03",
+    "data": "03/03/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -225,7 +225,7 @@
   },
   {
     "id": 8,
-    "data": "10/03",
+    "data": "10/03/2025",
     "cinza": {
       "goleiro": "Dionata",
       "linha": [
@@ -257,7 +257,7 @@
   },
   {
     "id": 9,
-    "data": "17/03",
+    "data": "17/03/2025",
     "cinza": {
       "goleiro": "Patric",
       "linha": [
@@ -289,7 +289,7 @@
   },
   {
     "id": 10,
-    "data": "24/03",
+    "data": "24/03/2025",
     "cinza": {
       "goleiro": "Dionata",
       "linha": [
@@ -321,7 +321,7 @@
   },
   {
     "id": 11,
-    "data": "31/03",
+    "data": "31/03/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -353,7 +353,7 @@
   },
   {
     "id": 12,
-    "data": "07/04",
+    "data": "07/04/2025",
     "cinza": {
       "goleiro": "Dionata",
       "linha": [
@@ -385,7 +385,7 @@
   },
   {
     "id": 13,
-    "data": "14/04",
+    "data": "14/04/2025",
     "cinza": {
       "goleiro": "Michel",
       "linha": [
@@ -417,7 +417,7 @@
   },
   {
     "id": 14,
-    "data": "21/04",
+    "data": "21/04/2025",
     "cinza": {
       "goleiro": "Deivid",
       "linha": [
@@ -449,7 +449,7 @@
   },
   {
     "id": 15,
-    "data": "28/04",
+    "data": "28/04/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -481,7 +481,7 @@
   },
   {
     "id": 16,
-    "data": "05/05",
+    "data": "05/05/2025",
     "cinza": {
       "goleiro": "Deivid",
       "linha": [
@@ -513,7 +513,7 @@
   },
   {
     "id": 17,
-    "data": "12/05",
+    "data": "12/05/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -545,7 +545,7 @@
   },
   {
     "id": 18,
-    "data": "19/05",
+    "data": "19/05/2025",
     "cinza": {
       "goleiro": "dudu",
       "linha": [
@@ -577,7 +577,7 @@
   },
   {
     "id": 19,
-    "data": "26/05",
+    "data": "26/05/2025",
     "cinza": {
       "goleiro": "Michel",
       "linha": [
@@ -609,7 +609,7 @@
   },
   {
     "id": 20,
-    "data": "02/06",
+    "data": "02/06/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -641,7 +641,7 @@
   },
   {
     "id": 21,
-    "data": "09/06",
+    "data": "09/06/2025",
     "cinza": {
       "goleiro": "Dionata",
       "linha": [
@@ -673,7 +673,7 @@
   },
   {
     "id": 22,
-    "data": "16/06",
+    "data": "16/06/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -705,7 +705,7 @@
   },
   {
     "id": 23,
-    "data": "23/06",
+    "data": "23/06/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -737,7 +737,7 @@
   },
   {
     "id": 24,
-    "data": "30/06",
+    "data": "30/06/2025",
     "cinza": {
       "goleiro": "Luan",
       "linha": [
@@ -769,7 +769,7 @@
   },
   {
     "id": 25,
-    "data": "07/07",
+    "data": "07/07/2025",
     "cinza": {
       "goleiro": "Assi",
       "linha": [
@@ -801,7 +801,7 @@
   },
   {
     "id": 26,
-    "data": "14/07",
+    "data": "14/07/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -833,7 +833,7 @@
   },
   {
     "id": 27,
-    "data": "21/07",
+    "data": "21/07/2025",
     "cinza": {
       "goleiro": "Patrick",
       "linha": [
@@ -865,7 +865,7 @@
   },
   {
     "id": 28,
-    "data": "28/07",
+    "data": "28/07/2025",
     "cinza": {
       "goleiro": "Luan",
       "linha": [
@@ -897,7 +897,7 @@
   },
   {
     "id": 29,
-    "data": "04/08",
+    "data": "04/08/2025",
     "cinza": {
       "goleiro": "Michel",
       "linha": [
@@ -929,7 +929,7 @@
   },
   {
     "id": 30,
-    "data": "11/08",
+    "data": "11/08/2025",
     "cinza": {
       "goleiro": "Daniel Goleiro",
       "linha": [
@@ -961,7 +961,7 @@
   },
   {
     "id": 31,
-    "data": "18/08",
+    "data": "18/08/2025",
     "cinza": {
       "goleiro": "Maicon",
       "linha": [
@@ -993,7 +993,7 @@
   },
   {
     "id": 32,
-    "data": "25/08",
+    "data": "25/08/2025",
     "cinza": {
       "goleiro": "Maicon",
       "linha": [
@@ -1025,7 +1025,7 @@
   },
   {
     "id": 33,
-    "data": "01/09",
+    "data": "01/09/2025",
     "cinza": {
       "goleiro": "Deivid",
       "linha": [
@@ -1057,7 +1057,7 @@
   },
   {
     "id": 34,
-    "data": "08/09",
+    "data": "08/09/2025",
     "cinza": {
       "goleiro": "Michel",
       "linha": [
@@ -1089,7 +1089,7 @@
   },
   {
     "id": 35,
-    "data": "15/09",
+    "data": "15/09/2025",
     "cinza": {
       "goleiro": "Pastel",
       "linha": [
@@ -1121,7 +1121,7 @@
   },
   {
     "id": 36,
-    "data": "22/09",
+    "data": "22/09/2025",
     "cinza": {
       "goleiro": "Dudu",
       "linha": [
@@ -1153,7 +1153,7 @@
   },
   {
     "id": 37,
-    "data": "29/09",
+    "data": "29/09/2025",
     "cinza": {
       "goleiro": "Pastel",
       "linha": [
@@ -1185,7 +1185,7 @@
   },
   {
     "id": 38,
-    "data": "06/10",
+    "data": "06/10/2025",
     "cinza": {
       "goleiro": "João",
       "linha": [
@@ -1217,7 +1217,7 @@
   },
   {
     "id": 39,
-    "data": "13/10",
+    "data": "13/10/2025",
     "cinza": {
       "goleiro": "Luan",
       "linha": [
@@ -1249,7 +1249,7 @@
   },
   {
     "id": 40,
-    "data": "20/10",
+    "data": "20/10/2025",
     "cinza": {
       "goleiro": "Devid",
       "linha": [
@@ -1281,7 +1281,7 @@
   },
   {
     "id": 41,
-    "data": "27/10",
+    "data": "27/10/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -1313,7 +1313,7 @@
   },
   {
     "id": 42,
-    "data": "03/11",
+    "data": "03/11/2025",
     "cinza": {
       "goleiro": "Devid",
       "linha": [
@@ -1345,7 +1345,7 @@
   },
   {
     "id": 43,
-    "data": "10/11",
+    "data": "10/11/2025",
     "cinza": {
       "goleiro": "Michel",
       "linha": [
@@ -1377,7 +1377,7 @@
   },
   {
     "id": 44,
-    "data": "17/11",
+    "data": "17/11/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -1409,7 +1409,7 @@
   },
   {
     "id": 45,
-    "data": "24/11",
+    "data": "24/11/2025",
     "cinza": {
       "goleiro": "Lacoste",
       "linha": [
@@ -1441,7 +1441,7 @@
   },
   {
   "id": 46,
-  "data": "01/12",
+  "data": "01/12/2025",
   "cinza": {
     "goleiro": "Lacoste",
     "linha": [
@@ -1472,7 +1472,7 @@
 },
 {
   "id": 47,
-  "data": "08/12",
+  "data": "08/12/2025",
   "cinza": {
     "goleiro": "João",
     "linha": [
@@ -1504,7 +1504,7 @@
 },
 {
   "id": 48,
-  "data": "15/12",
+  "data": "15/12/2025",
   "cinza": {
     "goleiro": "Pastel",
     "linha": [
@@ -1534,7 +1534,7 @@
 },
 {
   "id": 49,
-  "data": "15/12",
+  "data": "15/12/2025",
   "cinza": {
     "goleiro": "Lacoste",
     "linha": [
@@ -1564,7 +1564,7 @@
 },
 {
   "id": 50,
-  "data": "22/12",
+  "data": "22/12/2025",
   "cinza": {
     "goleiro": "Pastel",
     "linha": [
@@ -1596,7 +1596,7 @@
 },
 {
   "id": 51,
-  "data": "29/12",
+  "data": "29/12/2025",
   "cinza": {
     "goleiro": "Lacoste",
     "linha": [

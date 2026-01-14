@@ -139,7 +139,7 @@ function initAddGameForm() {
         }
 
         const [yyyy, mm, dd] = dateVal.split('-');
-        const dataFmt = `${dd}/${mm}`;
+        const dataFmt = `${dd}/${mm}/${yyyy}`;
         const nextId = Math.max(...originalGames.map(g => g.id), 0) + 1;
 
         const newGame = {
