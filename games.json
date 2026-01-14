@@ -1598,6 +1598,38 @@
   "id": 51,
   "data": "29/12/2025",
   "cinza": {
+    "goleiro": "Pastel",
+    "linha": [
+      "Eliezer",
+      "Adriano",
+      "Assis",
+      "Dionata",
+      "Duda",
+      "Pablo",
+      "Alex"
+    ]
+  },
+  "branco": {
+    "goleiro": "Lacoste",
+    "linha": [
+      "Brum",
+      "Rodrigo",
+      "Gabriel",
+      "Gessé",
+      "João",
+      "Daniel",
+      "Ávila"
+    ]
+  },
+  "placar": {
+    "cinza": 12,
+    "branco": 12
+  }
+},
+{
+  "id": 52,
+  "data": "05/01/2026",
+  "cinza": {
     "goleiro": "Lacoste",
     "linha": [
       "Alex",
@@ -1622,8 +1654,40 @@
     ]
   },
   "placar": {
-    "cinza": 12,
-    "branco": 12
+    "cinza": 7,
+    "branco": 7
+  }
+},
+{
+  "id": 53,
+  "data": "12/01/2026",
+  "cinza": {
+    "goleiro": "Dionata",
+    "linha": [
+      "Brum",
+      "Saimon",
+      "Duda",
+      "Rodrigo",
+      "Adriano",
+      "Pablo",
+      "Alex"
+    ]
+  },
+  "branco": {
+    "goleiro": "Luan",
+    "linha": [
+      "Ivan",
+      "Eliezer",
+      "Gessé",
+      "Edu",
+      "Gabriel",
+      "Odacir",
+      "Lacoste"
+    ]
+  },
+  "placar": {
+    "cinza": 13,
+    "branco": 8
   }
 }
 ]
