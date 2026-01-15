@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             originalGames = data;
             rebuildPlayerOptions(originalGames);
+            initTeamPicker();
             initDateFilter();
             initAddGameForm();
             applyFilter();
@@ -117,6 +118,7 @@ function rebuildPlayerOptions(games) {
     renderSelect('add-gk-branco');
     renderSelect('add-line-cinza', true);
     renderSelect('add-line-branco', true);
+    renderTeamPickerOptions();
 }
 
 function initAddGameForm() {
@@ -157,6 +159,183 @@ function initAddGameForm() {
         statusEl.textContent = `Jogo ${nextId} adicionado (somente nesta sessão).`;
         form.reset();
     });
+}
+
+function updateTeamPickerCount() {
+    const countEl = document.getElementById('team-picker-count');
+    if (!countEl) return;
+    const selected = document.querySelectorAll('input[name="team-player"]:checked').length;
+    countEl.textContent = selected;
+}
+
+function renderTeamPickerPlaceholder() {
+    const results = document.getElementById('team-draw-results');
+    if (!results) return;
+    results.innerHTML = `
+        <div class="border border-slate-200 rounded-lg p-4">
+            <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
+            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+        </div>
+        <div class="border border-slate-200 rounded-lg p-4">
+            <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
+            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+        </div>
+    `;
+}
+
+function renderTeamPickerOptions() {
+    const gkCinza = document.getElementById('team-gk-cinza');
+    const gkBranco = document.getElementById('team-gk-branco');
+    const list = document.getElementById('team-player-list');
+    if (!gkCinza || !gkBranco || !list) return;
+
+    const currentCinza = gkCinza.value;
+    const currentBranco = gkBranco.value;
+    const optionsHtml = playerOptions.map(p => `<option value="${p}">${p}</option>`).join('');
+
+    gkCinza.innerHTML = optionsHtml;
+    gkBranco.innerHTML = optionsHtml;
+    if (currentCinza) gkCinza.value = currentCinza;
+    if (currentBranco) gkBranco.value = currentBranco;
+
+    list.innerHTML = playerOptions.map((p, idx) => `
+        <label class="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded px-2 py-1">
+            <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
+            <span>${p}</span>
+        </label>
+    `).join('');
+
+    list.querySelectorAll('input[name="team-player"]').forEach(input => {
+        input.addEventListener('change', updateTeamPickerCount);
+    });
+    updateTeamPickerCount();
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function initTeamPicker() {
+    const openBtn = document.getElementById('open-team-picker');
+    const modal = document.getElementById('team-picker-modal');
+    if (!openBtn || !modal) return;
+
+    const overlay = document.getElementById('team-picker-overlay');
+    const closeBtn = document.getElementById('team-picker-close');
+    const shuffleBtn = document.getElementById('team-picker-shuffle');
+    const clearBtn = document.getElementById('team-picker-clear');
+    const selectAllBtn = document.getElementById('team-picker-select-all');
+    const unselectAllBtn = document.getElementById('team-picker-unselect-all');
+    const statusEl = document.getElementById('team-picker-status');
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    };
+    const openModal = () => {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        if (statusEl) statusEl.textContent = '';
+        updateTeamPickerCount();
+    };
+
+    openBtn.addEventListener('click', openModal);
+    if (overlay) overlay.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closeModal();
+        }
+    });
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('input[name="team-player"]').forEach(input => { input.checked = true; });
+            updateTeamPickerCount();
+        });
+    }
+    if (unselectAllBtn) {
+        unselectAllBtn.addEventListener('click', () => {
+            document.querySelectorAll('input[name="team-player"]').forEach(input => { input.checked = false; });
+            updateTeamPickerCount();
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.querySelectorAll('input[name="team-player"]').forEach(input => { input.checked = false; });
+            const teamSizeInput = document.getElementById('team-size');
+            if (teamSizeInput && !teamSizeInput.value) teamSizeInput.value = 4;
+            if (statusEl) statusEl.textContent = '';
+            updateTeamPickerCount();
+            renderTeamPickerPlaceholder();
+        });
+    }
+
+    if (shuffleBtn) {
+        shuffleBtn.addEventListener('click', () => {
+            const teamSize = parseInt(document.getElementById('team-size').value, 10);
+            const gkCinza = document.getElementById('team-gk-cinza').value;
+            const gkBranco = document.getElementById('team-gk-branco').value;
+
+            if (!gkCinza || !gkBranco) {
+                if (statusEl) statusEl.textContent = 'Selecione os dois goleiros.';
+                return;
+            }
+            if (gkCinza === gkBranco) {
+                if (statusEl) statusEl.textContent = 'Os goleiros precisam ser diferentes.';
+                return;
+            }
+            if (!teamSize || teamSize < 1) {
+                if (statusEl) statusEl.textContent = 'Informe quantos jogadores de linha por time.';
+                return;
+            }
+
+            const selected = Array.from(document.querySelectorAll('input[name="team-player"]:checked')).map(input => input.value);
+            const linePool = selected.filter(name => name !== gkCinza && name !== gkBranco);
+            const required = teamSize * 2;
+
+            if (linePool.length < required) {
+                if (statusEl) statusEl.textContent = `Selecione pelo menos ${required} jogadores de linha (al\u00e9m dos goleiros).`;
+                return;
+            }
+
+            const chosen = shuffleArray([...linePool]).slice(0, required);
+            const teamCinza = chosen.slice(0, teamSize);
+            const teamBranco = chosen.slice(teamSize, required);
+
+            const results = document.getElementById('team-draw-results');
+            if (results) {
+                results.innerHTML = `
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
+                        <p class="text-xs text-slate-500 mb-2">Goleiro: ${gkCinza}</p>
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            ${teamCinza.map(p => `<span class="px-2 py-1 bg-slate-50 border border-slate-200 rounded">${p}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="border border-slate-200 rounded-lg p-4">
+                        <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
+                        <p class="text-xs text-slate-500 mb-2">Goleiro: ${gkBranco}</p>
+                        <div class="flex flex-wrap gap-2 text-sm">
+                            ${teamBranco.map(p => `<span class="px-2 py-1 bg-amber-50 border border-amber-200 rounded">${p}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (statusEl) {
+                statusEl.textContent = linePool.length > required
+                    ? `Times sorteados. Sobram ${linePool.length - required} jogadores fora do sorteio.`
+                    : 'Times sorteados com sucesso.';
+            }
+        });
+    }
 }
 
 function applyFilter() {
