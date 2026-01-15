@@ -69,6 +69,99 @@ tr {
     background: rgba(255, 255, 255, 0.92);
 }
 
+/* Team pitch results */
+.team-pitch {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: repeating-linear-gradient(
+        90deg,
+        #0f8f44 0px,
+        #0f8f44 30px,
+        #0fa04d 30px,
+        #0fa04d 60px
+    );
+    padding: 14px;
+    min-height: 180px;
+    overflow: hidden;
+}
+.team-pitch::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 50%;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateX(-50%);
+}
+.team-pitch::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 88px;
+    height: 88px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+}
+.team-pitch--cinza {
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.2);
+}
+.team-pitch--branco {
+    box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+.team-pitch-goal {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 46px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+}
+.team-pitch-line {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+}
+.team-pitch-empty {
+    position: relative;
+    z-index: 1;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
+}
+.team-chip {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    text-align: center;
+    white-space: nowrap;
+}
+.team-chip--cinza {
+    border-color: rgba(15, 23, 42, 0.2);
+}
+.team-chip--branco {
+    border-color: rgba(245, 158, 11, 0.4);
+}
+.team-chip--gk {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.95);
+}
+.team-chip--selected {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.8);
+    border-color: rgba(251, 191, 36, 0.9);
+}
+
 /* Slider duplo em uma barra */
 .range-dual {
     position: relative;

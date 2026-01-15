@@ -200,14 +200,18 @@ function renderTeamPickerPlaceholder() {
         <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
             <div class="border border-slate-200 rounded-lg p-4">
                 <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
-                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+                <div class="team-pitch team-pitch--cinza">
+                    <p class="team-pitch-empty">Aguardando sorteio.</p>
+                </div>
             </div>
             <div class="flex justify-center">
                 <button id="team-picker-swap" type="button" class="bg-slate-200 text-slate-600 text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-300" disabled>&harr;</button>
             </div>
             <div class="border border-slate-200 rounded-lg p-4">
                 <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
-                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+                <div class="team-pitch team-pitch--branco">
+                    <p class="team-pitch-empty">Aguardando sorteio.</p>
+                </div>
             </div>
         </div>
     `;
@@ -253,32 +257,32 @@ function renderTeamPickerResults() {
 
     const renderChip = (team, name) => {
         const isSelected = teamPickerSelection[team] === name;
-        const base = team === 'cinza'
-            ? 'bg-slate-50 border-slate-200'
-            : 'bg-amber-50 border-amber-200';
-        const selected = isSelected ? 'ring-2 ring-amber-400 border-amber-400' : '';
-        return `<button type="button" data-team="${team}" data-player="${name}" class="px-2 py-1 border rounded text-sm ${base} ${selected}">${name}</button>`;
+        const base = team === 'cinza' ? 'team-chip team-chip--cinza' : 'team-chip team-chip--branco';
+        const selected = isSelected ? 'team-chip--selected' : '';
+        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${name}</button>`;
     };
+
+    const renderPitch = (team, label, gkName, players) => `
+        <div class="border border-slate-200 rounded-lg p-4">
+            <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
+            <div class="team-pitch team-pitch--${team}">
+                <div class="team-pitch-goal">
+                    <span class="team-chip team-chip--gk" data-team="${team}" data-player="${gkName}">${gkName}</span>
+                </div>
+                <div class="team-pitch-line">
+                    ${players.map(p => renderChip(team, p)).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 
     results.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
-            <div class="border border-slate-200 rounded-lg p-4">
-                <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
-                <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkCinza}</p>
-                <div class="flex flex-wrap gap-2 text-sm">
-                    ${teamPickerState.cinza.map(p => renderChip('cinza', p)).join('')}
-                </div>
-            </div>
+            ${renderPitch('cinza', 'Time Cinza', teamPickerState.gkCinza, teamPickerState.cinza)}
             <div class="flex justify-center">
                 <button id="team-picker-swap" type="button" class="bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-800">&harr;</button>
             </div>
-            <div class="border border-slate-200 rounded-lg p-4">
-                <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
-                <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkBranco}</p>
-                <div class="flex flex-wrap gap-2 text-sm">
-                    ${teamPickerState.branco.map(p => renderChip('branco', p)).join('')}
-                </div>
-            </div>
+            ${renderPitch('branco', 'Time Branco', teamPickerState.gkBranco, teamPickerState.branco)}
         </div>
     `;
 }
