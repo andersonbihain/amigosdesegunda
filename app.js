@@ -40,6 +40,19 @@ function standardize(name) {
 let originalGames = [];
 let dateValues = [];
 let playerOptions = [];
+const TEAM_PICKER_EXCLUDE = new Set([
+    'Leonel',
+    'Anderson G',
+    'Daniel Goleiro',
+    'Edevaldo',
+    'Luciano',
+    'Maicon',
+    'Maur\u00edcio',
+    'Natan',
+    'Raul',
+    'Sandro',
+    'Vitor'
+]);
 
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
@@ -191,14 +204,15 @@ function renderTeamPickerOptions() {
 
     const currentCinza = gkCinza.value;
     const currentBranco = gkBranco.value;
-    const optionsHtml = playerOptions.map(p => `<option value="${p}">${p}</option>`).join('');
+    const teamPickerOptions = playerOptions.filter(p => !TEAM_PICKER_EXCLUDE.has(p));
+    const optionsHtml = teamPickerOptions.map(p => `<option value="${p}">${p}</option>`).join('');
 
     gkCinza.innerHTML = optionsHtml;
     gkBranco.innerHTML = optionsHtml;
     if (currentCinza) gkCinza.value = currentCinza;
     if (currentBranco) gkBranco.value = currentBranco;
 
-    list.innerHTML = playerOptions.map((p, idx) => `
+    list.innerHTML = teamPickerOptions.map((p, idx) => `
         <label class="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded px-2 py-1">
             <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
             <span>${p}</span>
