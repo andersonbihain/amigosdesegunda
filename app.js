@@ -197,13 +197,18 @@ function renderTeamPickerPlaceholder() {
     const results = document.getElementById('team-draw-results');
     if (!results) return;
     results.innerHTML = `
-        <div class="border border-slate-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
-            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
-        </div>
-        <div class="border border-slate-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
-            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+            <div class="border border-slate-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
+                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+            </div>
+            <div class="flex justify-center">
+                <button id="team-picker-swap" type="button" class="bg-slate-200 text-slate-600 text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-300" disabled>&harr;</button>
+            </div>
+            <div class="border border-slate-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
+                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+            </div>
         </div>
     `;
 }
@@ -256,18 +261,23 @@ function renderTeamPickerResults() {
     };
 
     results.innerHTML = `
-        <div class="border border-slate-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
-            <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkCinza}</p>
-            <div class="flex flex-wrap gap-2 text-sm">
-                ${teamPickerState.cinza.map(p => renderChip('cinza', p)).join('')}
+        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+            <div class="border border-slate-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
+                <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkCinza}</p>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    ${teamPickerState.cinza.map(p => renderChip('cinza', p)).join('')}
+                </div>
             </div>
-        </div>
-        <div class="border border-slate-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
-            <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkBranco}</p>
-            <div class="flex flex-wrap gap-2 text-sm">
-                ${teamPickerState.branco.map(p => renderChip('branco', p)).join('')}
+            <div class="flex justify-center">
+                <button id="team-picker-swap" type="button" class="bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-800">&harr;</button>
+            </div>
+            <div class="border border-slate-200 rounded-lg p-4">
+                <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
+                <p class="text-xs text-slate-500 mb-2">Goleiro: ${teamPickerState.gkBranco}</p>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    ${teamPickerState.branco.map(p => renderChip('branco', p)).join('')}
+                </div>
             </div>
         </div>
     `;
@@ -289,7 +299,6 @@ function initTeamPicker() {
     const overlay = document.getElementById('team-picker-overlay');
     const closeBtn = document.getElementById('team-picker-close');
     const shuffleBtn = document.getElementById('team-picker-shuffle');
-    const swapBtn = document.getElementById('team-picker-swap');
     const clearBtn = document.getElementById('team-picker-clear');
     const selectAllBtn = document.getElementById('team-picker-select-all');
     const unselectAllBtn = document.getElementById('team-picker-unselect-all');
@@ -343,6 +352,28 @@ function initTeamPicker() {
 
     if (results) {
         results.addEventListener('click', (event) => {
+            const swapButton = event.target.closest('#team-picker-swap');
+            if (swapButton) {
+                const a = teamPickerSelection.cinza;
+                const b = teamPickerSelection.branco;
+                if (!a || !b) {
+                    if (statusEl) statusEl.textContent = 'Selecione um jogador de cada time para trocar.';
+                    return;
+                }
+                const idxCinza = teamPickerState.cinza.indexOf(a);
+                const idxBranco = teamPickerState.branco.indexOf(b);
+                if (idxCinza === -1 || idxBranco === -1) {
+                    if (statusEl) statusEl.textContent = 'Nao foi possivel localizar os jogadores selecionados.';
+                    return;
+                }
+                teamPickerState.cinza[idxCinza] = b;
+                teamPickerState.branco[idxBranco] = a;
+                clearTeamPickerSelection();
+                renderTeamPickerResults();
+                if (statusEl) statusEl.textContent = 'Jogadores trocados com sucesso.';
+                return;
+            }
+
             const button = event.target.closest('[data-team][data-player]');
             if (!button) return;
             const team = button.getAttribute('data-team');
@@ -354,28 +385,6 @@ function initTeamPicker() {
                 teamPickerSelection[team] = name;
             }
             renderTeamPickerResults();
-        });
-    }
-
-    if (swapBtn) {
-        swapBtn.addEventListener('click', () => {
-            const a = teamPickerSelection.cinza;
-            const b = teamPickerSelection.branco;
-            if (!a || !b) {
-                if (statusEl) statusEl.textContent = 'Selecione um jogador de cada time para trocar.';
-                return;
-            }
-            const idxCinza = teamPickerState.cinza.indexOf(a);
-            const idxBranco = teamPickerState.branco.indexOf(b);
-            if (idxCinza === -1 || idxBranco === -1) {
-                if (statusEl) statusEl.textContent = 'Nao foi possivel localizar os jogadores selecionados.';
-                return;
-            }
-            teamPickerState.cinza[idxCinza] = b;
-            teamPickerState.branco[idxBranco] = a;
-            clearTeamPickerSelection();
-            renderTeamPickerResults();
-            if (statusEl) statusEl.textContent = 'Jogadores trocados com sucesso.';
         });
     }
 

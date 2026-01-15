@@ -231,10 +231,9 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <button id="team-picker-shuffle" type="button" class="bg-amber-500 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-amber-600">Sortear times</button>
-                        <button id="team-picker-swap" type="button" class="bg-slate-900 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-slate-800">Trocar selecionados &harr;</button>
                         <button id="team-picker-clear" type="button" class="bg-slate-100 text-slate-700 text-sm font-semibold px-4 py-2 rounded hover:bg-slate-200">Limpar</button>
                     </div>
-                    <p class="text-xs text-slate-500">Selecione um jogador de cada time para trocar de lado.</p>
+                    <p class="text-xs text-slate-500">Selecione um jogador de cada time e use o botao entre os times para trocar.</p>
                     <p id="team-picker-status" class="text-xs text-amber-600"></p>
                 </div>
 
@@ -252,13 +251,18 @@
                     </div>
 
                     <div id="team-draw-results" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="border border-slate-200 rounded-lg p-4">
-                            <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
-                            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
-                        </div>
-                        <div class="border border-slate-200 rounded-lg p-4">
-                            <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
-                            <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                            <div class="border border-slate-200 rounded-lg p-4">
+                                <p class="text-sm font-semibold text-slate-700 mb-2">Time Cinza</p>
+                                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+                            </div>
+                            <div class="flex justify-center">
+                                <button id="team-picker-swap" type="button" class="bg-slate-200 text-slate-600 text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-300" disabled>&harr;</button>
+                            </div>
+                            <div class="border border-slate-200 rounded-lg p-4">
+                                <p class="text-sm font-semibold text-slate-700 mb-2">Time Branco</p>
+                                <div class="text-xs text-slate-500">Aguardando sorteio.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
