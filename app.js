@@ -56,6 +56,12 @@ const TEAM_PICKER_EXCLUDE = new Set([
 const teamPickerState = { cinza: [], branco: [], gkCinza: '', gkBranco: '' };
 const teamPickerSelection = { cinza: null, branco: null };
 
+function setTeamPickerPlayersVisible(isVisible) {
+    const playersSection = document.getElementById('team-picker-all-players');
+    if (!playersSection) return;
+    playersSection.classList.toggle('hidden', !isVisible);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
     fetch('games.json')
@@ -194,6 +200,7 @@ function renderTeamPickerPlaceholder() {
     teamPickerState.gkCinza = '';
     teamPickerState.gkBranco = '';
     clearTeamPickerSelection();
+    setTeamPickerPlayersVisible(true);
     const results = document.getElementById('team-draw-results');
     if (!results) return;
     results.innerHTML = `
@@ -318,6 +325,7 @@ function initTeamPicker() {
         document.body.classList.add('overflow-hidden');
         if (statusEl) statusEl.textContent = '';
         updateTeamPickerCount();
+        setTeamPickerPlayersVisible(true);
     };
 
     openBtn.addEventListener('click', openModal);
@@ -350,6 +358,7 @@ function initTeamPicker() {
             if (teamSizeInput && !teamSizeInput.value) teamSizeInput.value = 7;
             if (statusEl) statusEl.textContent = '';
             updateTeamPickerCount();
+            setTeamPickerPlayersVisible(true);
             renderTeamPickerPlaceholder();
         });
     }
@@ -429,6 +438,7 @@ function initTeamPicker() {
             teamPickerState.gkCinza = gkCinza;
             teamPickerState.gkBranco = gkBranco;
             clearTeamPickerSelection();
+            setTeamPickerPlayersVisible(false);
             renderTeamPickerResults();
 
             if (statusEl) {
