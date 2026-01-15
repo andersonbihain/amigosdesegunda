@@ -62,6 +62,12 @@ function setTeamPickerPlayersVisible(isVisible) {
     playersSection.classList.toggle('hidden', !isVisible);
 }
 
+function setTeamPickerWhatsAppEnabled(isEnabled) {
+    const btn = document.getElementById('team-picker-whatsapp');
+    if (!btn) return;
+    btn.disabled = !isEnabled;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
     fetch('games.json')
@@ -201,6 +207,7 @@ function renderTeamPickerPlaceholder() {
     teamPickerState.gkBranco = '';
     clearTeamPickerSelection();
     setTeamPickerPlayersVisible(true);
+    setTeamPickerWhatsAppEnabled(false);
     const results = document.getElementById('team-draw-results');
     if (!results) return;
     results.innerHTML = `
@@ -262,11 +269,11 @@ function renderTeamPickerResults() {
         return;
     }
 
-    const renderChip = (team, name) => {
+    const renderChip = (team, name, label) => {
         const isSelected = teamPickerSelection[team] === name;
         const base = team === 'cinza' ? 'team-chip team-chip--cinza' : 'team-chip team-chip--branco';
         const selected = isSelected ? 'team-chip--selected' : '';
-        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${name}</button>`;
+        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${label}</button>`;
     };
 
     const renderPitch = (team, label, gkName, players) => `
@@ -274,10 +281,10 @@ function renderTeamPickerResults() {
             <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
             <div class="team-pitch team-pitch--${team}">
                 <div class="team-pitch-goal">
-                    <span class="team-chip team-chip--gk" data-team="${team}" data-player="${gkName}">${gkName}</span>
+                    <span class="team-chip team-chip--gk" data-team="${team}" data-player="${gkName}">1 - ${gkName}</span>
                 </div>
                 <div class="team-pitch-line">
-                    ${players.map(p => renderChip(team, p)).join('')}
+                    ${players.map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
                 </div>
             </div>
         </div>
@@ -292,6 +299,21 @@ function renderTeamPickerResults() {
             ${renderPitch('branco', 'Time Branco', teamPickerState.gkBranco, teamPickerState.branco)}
         </div>
     `;
+}
+
+function buildWhatsAppMessage() {
+    const cinzaList = [`1 - ${teamPickerState.gkCinza}`, ...teamPickerState.cinza.map((p, idx) => `${idx + 2} - ${p}`)];
+    const brancoList = [`1 - ${teamPickerState.gkBranco}`, ...teamPickerState.branco.map((p, idx) => `${idx + 2} - ${p}`)];
+
+    return [
+        'Atencao as cores dos uniformes e ordem de substituicao:',
+        '',
+        `Time cinza: ${'\u{1F3F4}'.repeat(4)}`,
+        ...cinzaList,
+        '',
+        `Time Branco: ${'\u{1F3F3}\u{FE0F}'.repeat(4)}`,
+        ...brancoList
+    ].join('\n');
 }
 
 function shuffleArray(arr) {
@@ -310,6 +332,7 @@ function initTeamPicker() {
     const overlay = document.getElementById('team-picker-overlay');
     const closeBtn = document.getElementById('team-picker-close');
     const shuffleBtn = document.getElementById('team-picker-shuffle');
+    const whatsappBtn = document.getElementById('team-picker-whatsapp');
     const clearBtn = document.getElementById('team-picker-clear');
     const selectAllBtn = document.getElementById('team-picker-select-all');
     const unselectAllBtn = document.getElementById('team-picker-unselect-all');
@@ -325,7 +348,9 @@ function initTeamPicker() {
         document.body.classList.add('overflow-hidden');
         if (statusEl) statusEl.textContent = '';
         updateTeamPickerCount();
-        setTeamPickerPlayersVisible(true);
+        const hasTeams = teamPickerState.cinza.length > 0 && teamPickerState.branco.length > 0;
+        setTeamPickerPlayersVisible(!hasTeams);
+        setTeamPickerWhatsAppEnabled(hasTeams);
     };
 
     openBtn.addEventListener('click', openModal);
@@ -359,7 +384,17 @@ function initTeamPicker() {
             if (statusEl) statusEl.textContent = '';
             updateTeamPickerCount();
             setTeamPickerPlayersVisible(true);
+            setTeamPickerWhatsAppEnabled(false);
             renderTeamPickerPlaceholder();
+        });
+    }
+
+    if (whatsappBtn) {
+        whatsappBtn.addEventListener('click', () => {
+            if (teamPickerState.cinza.length === 0 || teamPickerState.branco.length === 0) return;
+            const message = buildWhatsAppMessage();
+            const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank', 'noopener');
         });
     }
 
@@ -439,6 +474,7 @@ function initTeamPicker() {
             teamPickerState.gkBranco = gkBranco;
             clearTeamPickerSelection();
             setTeamPickerPlayersVisible(false);
+            setTeamPickerWhatsAppEnabled(true);
             renderTeamPickerResults();
 
             if (statusEl) {
