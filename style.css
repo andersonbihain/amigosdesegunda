@@ -130,6 +130,9 @@ tr {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 6px;
 }
 .team-pitch-empty {
     position: relative;
