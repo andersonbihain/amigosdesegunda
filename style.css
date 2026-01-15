@@ -19,6 +19,56 @@ tr {
     transition: background-color 0.2s;
 }
 
+/* Team picker pitch */
+.pitch-surface {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid #0b5d2a;
+    background: repeating-linear-gradient(
+        90deg,
+        #0f9b4d 0px,
+        #0f9b4d 24px,
+        #0ea34f 24px,
+        #0ea34f 48px
+    );
+    padding: 12px;
+    overflow: hidden;
+}
+.pitch-surface::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 50%;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateX(-50%);
+}
+.pitch-surface::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 92px;
+    height: 92px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+}
+.pitch-list {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+.pitch-list label {
+    background: rgba(255, 255, 255, 0.92);
+}
+
 /* Slider duplo em uma barra */
 .range-dual {
     position: relative;
