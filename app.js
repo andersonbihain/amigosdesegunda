@@ -42,12 +42,12 @@ let dateValues = [];
 let playerOptions = [];
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTeamPicker();
     fetch('games.json')
         .then(res => res.json())
         .then(data => {
             originalGames = data;
             rebuildPlayerOptions(originalGames);
-            initTeamPicker();
             initDateFilter();
             initAddGameForm();
             applyFilter();
