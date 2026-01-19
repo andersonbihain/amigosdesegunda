@@ -2,7 +2,7 @@
   {
     "nome": "Aderson",
     "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -11,7 +11,7 @@
   {
     "nome": "Admar",
     "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -29,18 +29,9 @@
   {
     "nome": "Alex",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Anderson G",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
@@ -65,7 +56,7 @@
   {
     "nome": "Brum",
     "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -83,18 +74,9 @@
   {
     "nome": "Daniel",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Daniel Goleiro",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
@@ -110,7 +92,7 @@
   {
     "nome": "Dionata",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": true,
     "rating_linha": null,
@@ -127,15 +109,6 @@
   },
   {
     "nome": "Dudu",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Edevaldo",
     "posicao": [
       "meio"
     ],
@@ -191,7 +164,7 @@
   {
     "nome": "Gabriel J",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -227,7 +200,7 @@
   {
     "nome": "Ivan",
     "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -245,7 +218,7 @@
   {
     "nome": "Lacoste",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": true,
     "rating_linha": null,
@@ -254,16 +227,7 @@
   {
     "nome": "Lauro",
     "posicao": [
-      "meio"
-    ],
-    "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Leonel",
-    "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -271,27 +235,7 @@
   },
   {
     "nome": "Luan",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Luciano",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Maicon",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
@@ -316,9 +260,7 @@
   },
   {
     "nome": "Michel",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
@@ -333,18 +275,9 @@
     "rating_gk": null
   },
   {
-    "nome": "Natan",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
     "nome": "Odacir",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -353,7 +286,7 @@
   {
     "nome": "Pablo",
     "posicao": [
-      "meio"
+      "ataque"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -361,18 +294,14 @@
   },
   {
     "nome": "Pastel",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Patric",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
@@ -380,7 +309,7 @@
   {
     "nome": "Paulinho",
     "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -389,16 +318,7 @@
   {
     "nome": "Portinho",
     "posicao": [
-      "meio"
-    ],
-    "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Raul",
-    "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -416,16 +336,7 @@
   {
     "nome": "Saimon",
     "posicao": [
-      "meio"
-    ],
-    "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Sandro",
-    "posicao": [
-      "meio"
+      "defesa"
     ],
     "goleiro": false,
     "rating_linha": null,
@@ -446,15 +357,6 @@
       "meio"
     ],
     "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
-    "nome": "Vitor",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
