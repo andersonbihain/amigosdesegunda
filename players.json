@@ -1,0 +1,470 @@
+[
+  {
+    "nome": "Aderson",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Admar",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Adriano",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Alex",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Anderson G",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Assis",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Bihain",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Brum",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Ca\u00e7apava",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Daniel",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Daniel Goleiro",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Deivid",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Dionata",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Duda",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Dudu",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Edevaldo",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Edu",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Elder",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Eliezer",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Everson",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Gabriel",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Gabriel J",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Gess\u00e9",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Guilherme",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Iuri",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Ivan",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Jo\u00e3o",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Lacoste",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Lauro",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Leonel",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Luan",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Luciano",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Maicon",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Maur\u00edcio",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Melita",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Michel",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Nando",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Natan",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Odacir",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Pablo",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Pastel",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Patric",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Paulinho",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Portinho",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Raul",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Rodrigo",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Saimon",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Sandro",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Santiago",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Vin\u00edcius",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "Vitor",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": true,
+    "rating_linha": null,
+    "rating_gk": null
+  },
+  {
+    "nome": "\u00c1vila",
+    "posicao": [
+      "meio"
+    ],
+    "goleiro": false,
+    "rating_linha": null,
+    "rating_gk": null
+  }
+]

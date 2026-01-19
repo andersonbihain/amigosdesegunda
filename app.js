@@ -40,6 +40,10 @@ function standardize(name) {
 let originalGames = [];
 let dateValues = [];
 let playerOptions = [];
+let playerProfiles = [];
+let playerProfileMap = {};
+let playerStats = {};
+let gkGlobalAvg = 0;
 const TEAM_PICKER_EXCLUDE = new Set([
     'Leonel',
     'Anderson G',
@@ -70,11 +74,17 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
-    fetch('games.json')
-        .then(res => res.json())
-        .then(data => {
-            originalGames = data;
+    Promise.all([
+        fetch('games.json').then(res => res.json()),
+        fetch('players.json')
+            .then(res => res.ok ? res.json() : [])
+            .catch(() => [])
+    ])
+        .then(([games, profiles]) => {
+            originalGames = games;
+            setPlayerProfiles(profiles);
             rebuildPlayerOptions(originalGames);
+            rebuildPlayerStats(originalGames);
             initDateFilter();
             initAddGameForm();
             applyFilter();
@@ -148,6 +158,73 @@ function rebuildPlayerOptions(games) {
     renderTeamPickerOptions();
 }
 
+function setPlayerProfiles(profiles) {
+    playerProfiles = Array.isArray(profiles) ? profiles : [];
+    playerProfileMap = {};
+    playerProfiles.forEach(p => {
+        if (!p || !p.nome) return;
+        const name = standardize(p.nome);
+        playerProfileMap[name] = {
+            nome: name,
+            posicao: Array.isArray(p.posicao) ? p.posicao : [],
+            goleiro: Boolean(p.goleiro),
+            rating_linha: p.rating_linha ?? null,
+            rating_gk: p.rating_gk ?? null
+        };
+    });
+}
+
+function buildPlayerStatsFromGames(games) {
+    const stats = {};
+    let totalGkGoals = 0;
+    let totalGkMatches = 0;
+
+    const ensure = (name) => {
+        const pName = standardize(name);
+        if (!stats[pName]) {
+            stats[pName] = { lineMatches: 0, linePoints: 0, gkMatches: 0, gkGoals: 0 };
+        }
+        return stats[pName];
+    };
+
+    games.forEach(game => {
+        const golsC = game.placar.cinza;
+        const golsB = game.placar.branco;
+        let resCinza, resBranco;
+        if (golsC > golsB) { resCinza = 'V'; resBranco = 'D'; }
+        else if (golsB > golsC) { resCinza = 'D'; resBranco = 'V'; }
+        else { resCinza = 'E'; resBranco = 'E'; }
+
+        const addLine = (name, result) => {
+            const p = ensure(name);
+            p.lineMatches++;
+            if (result === 'V') p.linePoints += 3;
+            if (result === 'E') p.linePoints += 1;
+        };
+        const addGk = (name, goalsAgainst) => {
+            const p = ensure(name);
+            p.gkMatches++;
+            p.gkGoals += goalsAgainst;
+            totalGkMatches++;
+            totalGkGoals += goalsAgainst;
+        };
+
+        addGk(game.cinza.goleiro, golsB);
+        addGk(game.branco.goleiro, golsC);
+        game.cinza.linha.forEach(n => addLine(n, resCinza));
+        game.branco.linha.forEach(n => addLine(n, resBranco));
+    });
+
+    const gkAvg = totalGkMatches > 0 ? (totalGkGoals / totalGkMatches) : 0;
+    return { stats, gkAvg };
+}
+
+function rebuildPlayerStats(games) {
+    const { stats, gkAvg } = buildPlayerStatsFromGames(games);
+    playerStats = stats;
+    gkGlobalAvg = gkAvg;
+}
+
 function initAddGameForm() {
     const form = document.getElementById('add-game-form');
     if (!form) return;
@@ -181,6 +258,7 @@ function initAddGameForm() {
 
         originalGames.push(newGame);
         rebuildPlayerOptions(originalGames);
+        rebuildPlayerStats(originalGames);
         initDateFilter();
         applyFilter();
         statusEl.textContent = `Jogo ${nextId} adicionado (somente nesta sessão).`;
@@ -281,7 +359,7 @@ function renderTeamPickerResults() {
             <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
             <div class="team-pitch team-pitch--${team}">
                 <div class="team-pitch-goal">
-                    <span class="team-chip team-chip--gk" data-team="${team}" data-player="${gkName}">1 - ${gkName}</span>
+                    <span class="team-chip team-chip--gk">1 - ${gkName}</span>
                 </div>
                 <div class="team-pitch-line">
                     ${players.map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
@@ -314,6 +392,158 @@ function buildWhatsAppMessage() {
         `Time Branco: ${'\u{1F3F3}\u{FE0F}'.repeat(4)}`,
         ...brancoList
     ].join('\n');
+}
+
+function normalizePosition(pos) {
+    if (!pos) return '';
+    const lower = pos.toString().trim().toLowerCase();
+    if (lower.startsWith('def')) return 'defesa';
+    if (lower.startsWith('mei')) return 'meio';
+    if (lower.startsWith('ata')) return 'ataque';
+    return '';
+}
+
+function getLineRating(name) {
+    const profile = playerProfileMap[name];
+    if (profile && typeof profile.rating_linha === 'number') {
+        return profile.rating_linha;
+    }
+    const stats = playerStats[name];
+    if (!stats || stats.lineMatches === 0) return 0;
+    const ppg = stats.linePoints / stats.lineMatches;
+    return Math.min(10, (ppg / 3) * 10);
+}
+
+function buildPositionGroups(linePool) {
+    const groups = { defesa: [], meio: [], ataque: [] };
+    const counts = { defesa: 0, meio: 0, ataque: 0 };
+    const missing = [];
+
+    linePool.forEach(name => {
+        const profile = playerProfileMap[name];
+        let positions = profile?.posicao || [];
+        positions = positions.map(normalizePosition).filter(Boolean);
+        if (positions.length === 0) {
+            positions = ['meio'];
+            missing.push(name);
+        }
+
+        let chosen = positions[0];
+        if (positions.length > 1) {
+            chosen = positions.reduce((best, pos) => (counts[pos] < counts[best] ? pos : best), positions[0]);
+        }
+
+        counts[chosen] += 1;
+        groups[chosen].push({ name, rating: getLineRating(name) });
+    });
+
+    return { groups, counts, missing };
+}
+
+function allocatePositionTargets(counts, requiredTotal) {
+    const positions = ['defesa', 'meio', 'ataque'];
+    const total = positions.reduce((sum, pos) => sum + counts[pos], 0);
+    const targets = { defesa: 0, meio: 0, ataque: 0 };
+    if (total === 0) return targets;
+
+    let assigned = 0;
+    const fractions = [];
+    positions.forEach(pos => {
+        const exact = (requiredTotal * counts[pos]) / total;
+        let base = Math.floor(exact);
+        base = Math.min(base, counts[pos]);
+        targets[pos] = base;
+        assigned += base;
+        fractions.push({ pos, frac: exact - base });
+    });
+
+    let remaining = requiredTotal - assigned;
+    fractions.sort((a, b) => b.frac - a.frac);
+    for (const item of fractions) {
+        if (remaining === 0) break;
+        if (targets[item.pos] < counts[item.pos]) {
+            targets[item.pos] += 1;
+            remaining -= 1;
+        }
+    }
+
+    while (remaining > 0) {
+        const next = positions.find(pos => targets[pos] < counts[pos]);
+        if (!next) break;
+        targets[next] += 1;
+        remaining -= 1;
+    }
+
+    return targets;
+}
+
+function pickPlayersByPosition(groups, requiredTotal) {
+    const counts = {
+        defesa: groups.defesa.length,
+        meio: groups.meio.length,
+        ataque: groups.ataque.length
+    };
+    const targets = allocatePositionTargets(counts, requiredTotal);
+    const selected = { defesa: [], meio: [], ataque: [] };
+    ['defesa', 'meio', 'ataque'].forEach(pos => {
+        const pool = shuffleArray([...groups[pos]]);
+        selected[pos] = pool.slice(0, targets[pos]);
+    });
+    return selected;
+}
+
+function snakeAssign(players, targetA, targetB) {
+    const teamA = [];
+    const teamB = [];
+    const sorted = [...players].sort((a, b) => b.rating - a.rating);
+
+    sorted.forEach((p, idx) => {
+        const preferA = idx % 4 === 0 || idx % 4 === 3;
+        if (preferA) {
+            if (teamA.length < targetA) teamA.push(p);
+            else if (teamB.length < targetB) teamB.push(p);
+        } else {
+            if (teamB.length < targetB) teamB.push(p);
+            else if (teamA.length < targetA) teamA.push(p);
+        }
+    });
+
+    return { teamA, teamB };
+}
+
+function balanceLineTeams(linePool, teamSize) {
+    const requiredTotal = teamSize * 2;
+    if (linePool.length < requiredTotal) {
+        return { error: `Selecione pelo menos ${requiredTotal} jogadores de linha (al\u00e9m dos goleiros).` };
+    }
+
+    const { groups, missing } = buildPositionGroups(linePool);
+    const selectedGroups = linePool.length > requiredTotal
+        ? pickPlayersByPosition(groups, requiredTotal)
+        : groups;
+
+    const targets = {
+        defesa: { a: Math.ceil(selectedGroups.defesa.length / 2), b: Math.floor(selectedGroups.defesa.length / 2) },
+        meio: { a: Math.ceil(selectedGroups.meio.length / 2), b: Math.floor(selectedGroups.meio.length / 2) },
+        ataque: { a: Math.ceil(selectedGroups.ataque.length / 2), b: Math.floor(selectedGroups.ataque.length / 2) }
+    };
+
+    const defense = snakeAssign(selectedGroups.defesa, targets.defesa.a, targets.defesa.b);
+    const midfield = snakeAssign(selectedGroups.meio, targets.meio.a, targets.meio.b);
+    const attack = snakeAssign(selectedGroups.ataque, targets.ataque.a, targets.ataque.b);
+
+    const teamCinza = [
+        ...defense.teamA,
+        ...midfield.teamA,
+        ...attack.teamA
+    ].map(p => p.name);
+    const teamBranco = [
+        ...defense.teamB,
+        ...midfield.teamB,
+        ...attack.teamB
+    ].map(p => p.name);
+
+    return { teamCinza, teamBranco, missing };
 }
 
 function shuffleArray(arr) {
@@ -457,16 +687,30 @@ function initTeamPicker() {
 
             const selected = Array.from(document.querySelectorAll('input[name="team-player"]:checked')).map(input => input.value);
             const linePool = selected.filter(name => name !== gkCinza && name !== gkBranco);
-            const required = teamSize * 2;
 
-            if (linePool.length < required) {
-                if (statusEl) statusEl.textContent = `Selecione pelo menos ${required} jogadores de linha (al\u00e9m dos goleiros).`;
-                return;
+            let teamCinza = [];
+            let teamBranco = [];
+            let missingPos = [];
+
+            if (Object.keys(playerProfileMap).length === 0) {
+                const required = teamSize * 2;
+                if (linePool.length < required) {
+                    if (statusEl) statusEl.textContent = `Selecione pelo menos ${required} jogadores de linha (al\u00e9m dos goleiros).`;
+                    return;
+                }
+                const chosen = shuffleArray([...linePool]).slice(0, required);
+                teamCinza = chosen.slice(0, teamSize);
+                teamBranco = chosen.slice(teamSize, required);
+            } else {
+                const result = balanceLineTeams(linePool, teamSize);
+                if (result.error) {
+                    if (statusEl) statusEl.textContent = result.error;
+                    return;
+                }
+                teamCinza = result.teamCinza;
+                teamBranco = result.teamBranco;
+                missingPos = result.missing || [];
             }
-
-            const chosen = shuffleArray([...linePool]).slice(0, required);
-            const teamCinza = chosen.slice(0, teamSize);
-            const teamBranco = chosen.slice(teamSize, required);
 
             teamPickerState.cinza = teamCinza;
             teamPickerState.branco = teamBranco;
@@ -478,9 +722,14 @@ function initTeamPicker() {
             renderTeamPickerResults();
 
             if (statusEl) {
-                statusEl.textContent = linePool.length > required
-                    ? `Times sorteados. Sobram ${linePool.length - required} jogadores fora do sorteio.`
-                    : 'Times sorteados com sucesso.';
+                const required = teamSize * 2;
+                const extraInfo = linePool.length > required
+                    ? ` Sobram ${linePool.length - required} jogadores fora do sorteio.`
+                    : '';
+                const missingInfo = missingPos.length > 0
+                    ? ` Posicao pendente para: ${missingPos.join(', ')}.`
+                    : '';
+                statusEl.textContent = `Times sorteados com sucesso.${extraInfo}${missingInfo}`;
             }
         });
     }
