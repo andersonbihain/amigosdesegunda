@@ -164,9 +164,14 @@ function setPlayerProfiles(profiles) {
     playerProfiles.forEach(p => {
         if (!p || !p.nome) return;
         const name = standardize(p.nome);
+        const primaryPositions = Array.isArray(p.posicao) ? p.posicao : [];
+        const secondaryRaw = p.posicao_secundaria ?? [];
+        const secondaryPositions = Array.isArray(secondaryRaw)
+            ? secondaryRaw
+            : (secondaryRaw ? [secondaryRaw] : []);
         playerProfileMap[name] = {
             nome: name,
-            posicao: Array.isArray(p.posicao) ? p.posicao : [],
+            posicao: [...primaryPositions, ...secondaryPositions],
             goleiro: Boolean(p.goleiro),
             rating_linha: p.rating_linha ?? null,
             rating_gk: p.rating_gk ?? null
@@ -351,8 +356,8 @@ function renderTeamPickerResults() {
         const isSelected = teamPickerSelection[team] === name;
         const base = team === 'cinza' ? 'team-chip team-chip--cinza' : 'team-chip team-chip--branco';
         const selected = isSelected ? 'team-chip--selected' : '';
-        const badge = getPositionBadge(name);
-        const badgeHtml = badge ? `<span class="team-chip-badge">${badge}</span>` : '';
+        const badge = getPositionBadgeInfo(name);
+        const badgeHtml = badge ? `<span class="team-chip-badge ${badge.className}">${badge.code}</span>` : '';
         return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${label}${badgeHtml}</button>`;
     };
 
@@ -361,7 +366,7 @@ function renderTeamPickerResults() {
             <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
             <div class="team-pitch team-pitch--${team}">
                 <div class="team-pitch-goal">
-                    <span class="team-chip team-chip--gk">1 - ${gkName}<span class="team-chip-badge team-chip-badge--gk">${getPositionBadge(gkName, true)}</span></span>
+                    <span class="team-chip team-chip--gk">1 - ${gkName}<span class="team-chip-badge team-chip-badge--gk">GL</span></span>
                 </div>
                 <div class="team-pitch-line">
                     ${players.map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
@@ -382,8 +387,19 @@ function renderTeamPickerResults() {
 }
 
 function buildWhatsAppMessage() {
-    const cinzaList = [`1 - ${teamPickerState.gkCinza}`, ...teamPickerState.cinza.map((p, idx) => `${idx + 2} - ${p}`)];
-    const brancoList = [`1 - ${teamPickerState.gkBranco}`, ...teamPickerState.branco.map((p, idx) => `${idx + 2} - ${p}`)];
+    const formatPlayer = (name, number, isGk = false) => {
+        const badge = getPositionBadgeInfo(name, isGk);
+        const suffix = badge ? ` (${badge.code})` : '';
+        return `${number} - ${name}${suffix}`;
+    };
+    const cinzaList = [
+        formatPlayer(teamPickerState.gkCinza, 1, true),
+        ...teamPickerState.cinza.map((p, idx) => formatPlayer(p, idx + 2))
+    ];
+    const brancoList = [
+        formatPlayer(teamPickerState.gkBranco, 1, true),
+        ...teamPickerState.branco.map((p, idx) => formatPlayer(p, idx + 2))
+    ];
 
     return [
         'Atencao as cores dos uniformes e ordem de substituicao:',
@@ -405,19 +421,25 @@ function normalizePosition(pos) {
     return '';
 }
 
-function getPositionBadge(name, isGk = false) {
-    if (isGk) return 'GO';
+function getPlayerPositions(name) {
     const profile = playerProfileMap[name];
-    if (!profile) return '';
+    if (!profile) return [];
     const positions = Array.isArray(profile.posicao)
         ? profile.posicao.map(normalizePosition).filter(Boolean)
         : [];
-    const pos = positions[0];
-    if (!pos) return '';
-    if (pos === 'defesa') return 'DF';
-    if (pos === 'meio') return 'ME';
-    if (pos === 'ataque') return 'AT';
-    return '';
+    return positions;
+}
+
+function getPositionBadgeInfo(name, isGk = false) {
+    if (isGk) return { code: 'GL', className: 'team-chip-badge--gk' };
+    const profile = playerProfileMap[name];
+    if (!profile) return null;
+    const pos = getPlayerPositions(name)[0];
+    if (!pos) return null;
+    if (pos === 'defesa') return { code: 'DF', className: 'team-chip-badge--defesa' };
+    if (pos === 'meio') return { code: 'MC', className: 'team-chip-badge--meio' };
+    if (pos === 'ataque') return { code: 'AT', className: 'team-chip-badge--ataque' };
+    return null;
 }
 
 function getLineRating(name) {
@@ -526,6 +548,129 @@ function snakeAssign(players, targetA, targetB) {
     });
 
     return { teamA, teamB };
+}
+
+function getPreferredFormation(teamSize) {
+    if (teamSize === 7) {
+        return { defesa: 2, meio: 3, ataque: 2 };
+    }
+    return null;
+}
+
+function buildLinePlayers(linePool) {
+    const missing = [];
+    const players = linePool.map(name => {
+        let positions = getPlayerPositions(name);
+        if (positions.length === 0) {
+            positions = ['meio'];
+            missing.push(name);
+        }
+        return { name, rating: getLineRating(name), positions };
+    });
+    return { players, missing };
+}
+
+function assignPlayersToFormation(players, formation, attempts = 40) {
+    const requiredTotal = Object.values(formation).reduce((sum, val) => sum + val, 0) * 2;
+    if (players.length < requiredTotal) return null;
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+        const need = { ...formation };
+        Object.keys(need).forEach(pos => { need[pos] = need[pos] * 2; });
+        const assigned = [];
+        const shuffled = shuffleArray([...players]);
+
+        for (const player of shuffled) {
+            if (assigned.length === requiredTotal) break;
+            const options = player.positions.filter(pos => need[pos] > 0);
+            if (options.length === 0) continue;
+            options.sort((a, b) => need[b] - need[a]);
+            const chosen = options[0];
+            need[chosen] -= 1;
+            assigned.push({ ...player, pos: chosen });
+        }
+
+        const remaining = Object.values(need).some(val => val > 0);
+        if (!remaining && assigned.length === requiredTotal) return assigned;
+    }
+
+    return null;
+}
+
+function splitTeamsByFormation(assigned, formation) {
+    const grouped = { defesa: [], meio: [], ataque: [] };
+    assigned.forEach(player => {
+        if (grouped[player.pos]) grouped[player.pos].push(player);
+    });
+
+    const targets = {
+        defesa: { a: formation.defesa, b: formation.defesa },
+        meio: { a: formation.meio, b: formation.meio },
+        ataque: { a: formation.ataque, b: formation.ataque }
+    };
+
+    const defense = snakeAssign(grouped.defesa, targets.defesa.a, targets.defesa.b);
+    const midfield = snakeAssign(grouped.meio, targets.meio.a, targets.meio.b);
+    const attack = snakeAssign(grouped.ataque, targets.ataque.a, targets.ataque.b);
+
+    const teamCinza = [
+        ...defense.teamA,
+        ...midfield.teamA,
+        ...attack.teamA
+    ].map(p => p.name);
+    const teamBranco = [
+        ...defense.teamB,
+        ...midfield.teamB,
+        ...attack.teamB
+    ].map(p => p.name);
+
+    return { teamCinza, teamBranco };
+}
+
+function canMeetTeamFormation(players, formation, attempts = 30) {
+    const requiredTotal = Object.values(formation).reduce((sum, val) => sum + val, 0);
+    if (players.length !== requiredTotal) return false;
+    const teamPlayers = players.map(name => {
+        const positions = getPlayerPositions(name);
+        return { name, positions: positions.length > 0 ? positions : ['meio'] };
+    });
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+        const need = { ...formation };
+        const shuffled = shuffleArray([...teamPlayers]);
+        let assigned = 0;
+
+        for (const player of shuffled) {
+            const options = player.positions.filter(pos => need[pos] > 0);
+            if (options.length === 0) continue;
+            options.sort((a, b) => need[b] - need[a]);
+            const chosen = options[0];
+            need[chosen] -= 1;
+            assigned += 1;
+        }
+
+        const remaining = Object.values(need).some(val => val > 0);
+        if (!remaining && assigned === requiredTotal) return true;
+    }
+
+    return false;
+}
+
+function balanceLineTeamsWithFormation(linePool, teamSize) {
+    const formation = getPreferredFormation(teamSize);
+    if (!formation) return null;
+
+    const requiredTotal = teamSize * 2;
+    if (linePool.length < requiredTotal) {
+        return { error: `Selecione pelo menos ${requiredTotal} jogadores de linha (al\u00e9m dos goleiros).` };
+    }
+
+    const { players, missing } = buildLinePlayers(linePool);
+    const assigned = assignPlayersToFormation(players, formation);
+    if (!assigned) return null;
+
+    const split = splitTeamsByFormation(assigned, formation);
+    return { teamCinza: split.teamCinza, teamBranco: split.teamBranco, missing };
 }
 
 function balanceLineTeams(linePool, teamSize) {
@@ -675,6 +820,20 @@ function initTeamPicker() {
                     if (statusEl) statusEl.textContent = 'Nao foi possivel localizar os jogadores selecionados.';
                     return;
                 }
+                const teamSize = teamPickerState.cinza.length;
+                const formation = getPreferredFormation(teamSize);
+                if (formation && Object.keys(playerProfileMap).length > 0) {
+                    const nextCinza = [...teamPickerState.cinza];
+                    const nextBranco = [...teamPickerState.branco];
+                    nextCinza[idxCinza] = b;
+                    nextBranco[idxBranco] = a;
+                    const okCinza = canMeetTeamFormation(nextCinza, formation);
+                    const okBranco = canMeetTeamFormation(nextBranco, formation);
+                    if (!okCinza || !okBranco) {
+                        if (statusEl) statusEl.textContent = 'Troca nao mantem a formacao 2-3-2.';
+                        return;
+                    }
+                }
                 teamPickerState.cinza[idxCinza] = b;
                 teamPickerState.branco[idxBranco] = a;
                 clearTeamPickerSelection();
@@ -733,7 +892,12 @@ function initTeamPicker() {
                 teamCinza = chosen.slice(0, teamSize);
                 teamBranco = chosen.slice(teamSize, required);
             } else {
-                const result = balanceLineTeams(linePool, teamSize);
+                const preferred = balanceLineTeamsWithFormation(linePool, teamSize);
+                if (preferred && preferred.error) {
+                    if (statusEl) statusEl.textContent = preferred.error;
+                    return;
+                }
+                const result = preferred || balanceLineTeams(linePool, teamSize);
                 if (result.error) {
                     if (statusEl) statusEl.textContent = result.error;
                     return;

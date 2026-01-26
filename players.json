@@ -1,234 +1,208 @@
 [
   {
     "nome": "Aderson",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Admar",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Adriano",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": [],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Alex",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Assis",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["ataque"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Bihain",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["ataque"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Brum",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Ca\u00e7apava",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Daniel",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Deivid",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Dionata",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Duda",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": [],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Dudu",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Edu",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Elder",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Eliezer",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Everson",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Gabriel",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Gabriel J",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Gess\u00e9",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["ataque"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Guilherme",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Iuri",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["ataque"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Ivan",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
-    "nome": "Jo\u00e3o",
-    "posicao": [
-      "meio"
-    ],
+    "nome": "João",
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Lacoste",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Lauro",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
@@ -236,24 +210,15 @@
   {
     "nome": "Luan",
     "posicao": [],
+    "posicao_secundaria": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
-    "nome": "Maur\u00edcio",
-    "posicao": [
-      "meio"
-    ],
-    "goleiro": false,
-    "rating_linha": null,
-    "rating_gk": null
-  },
-  {
     "nome": "Melita",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": [],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
@@ -261,33 +226,31 @@
   {
     "nome": "Michel",
     "posicao": [],
+    "posicao_secundaria": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Nando",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Odacir",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Pablo",
-    "posicao": [
-      "ataque"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
@@ -295,6 +258,7 @@
   {
     "nome": "Pastel",
     "posicao": [],
+    "posicao_secundaria": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
@@ -302,69 +266,63 @@
   {
     "nome": "Patric",
     "posicao": [],
+    "posicao_secundaria": [],
     "goleiro": true,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Paulinho",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": [],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Portinho",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Rodrigo",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["ataque"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Saimon",
-    "posicao": [
-      "defesa"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Santiago",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["meio"],
+    "posicao_secundaria": ["defesa"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "Vin\u00edcius",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["defesa"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null
   },
   {
     "nome": "\u00c1vila",
-    "posicao": [
-      "meio"
-    ],
+    "posicao": ["ataque"],
+    "posicao_secundaria": ["meio"],
     "goleiro": false,
     "rating_linha": null,
     "rating_gk": null

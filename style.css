@@ -162,6 +162,18 @@ tr {
     font-weight: 700;
     letter-spacing: 0.5px;
 }
+.team-chip-badge--defesa {
+    background: #1d4ed8;
+    color: #fff;
+}
+.team-chip-badge--meio {
+    background: #16a34a;
+    color: #fff;
+}
+.team-chip-badge--ataque {
+    background: #ef4444;
+    color: #fff;
+}
 .team-chip-badge--gk {
     background: #f59e0b;
     color: #0f172a;
