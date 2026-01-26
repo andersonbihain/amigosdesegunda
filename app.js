@@ -351,7 +351,9 @@ function renderTeamPickerResults() {
         const isSelected = teamPickerSelection[team] === name;
         const base = team === 'cinza' ? 'team-chip team-chip--cinza' : 'team-chip team-chip--branco';
         const selected = isSelected ? 'team-chip--selected' : '';
-        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${label}</button>`;
+        const badge = getPositionBadge(name);
+        const badgeHtml = badge ? `<span class="team-chip-badge">${badge}</span>` : '';
+        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${label}${badgeHtml}</button>`;
     };
 
     const renderPitch = (team, label, gkName, players) => `
@@ -359,7 +361,7 @@ function renderTeamPickerResults() {
             <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
             <div class="team-pitch team-pitch--${team}">
                 <div class="team-pitch-goal">
-                    <span class="team-chip team-chip--gk">1 - ${gkName}</span>
+                    <span class="team-chip team-chip--gk">1 - ${gkName}<span class="team-chip-badge team-chip-badge--gk">${getPositionBadge(gkName, true)}</span></span>
                 </div>
                 <div class="team-pitch-line">
                     ${players.map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
@@ -400,6 +402,21 @@ function normalizePosition(pos) {
     if (lower.startsWith('def')) return 'defesa';
     if (lower.startsWith('mei')) return 'meio';
     if (lower.startsWith('ata')) return 'ataque';
+    return '';
+}
+
+function getPositionBadge(name, isGk = false) {
+    if (isGk) return 'GO';
+    const profile = playerProfileMap[name];
+    if (!profile) return '';
+    const positions = Array.isArray(profile.posicao)
+        ? profile.posicao.map(normalizePosition).filter(Boolean)
+        : [];
+    const pos = positions[0];
+    if (!pos) return '';
+    if (pos === 'defesa') return 'DF';
+    if (pos === 'meio') return 'ME';
+    if (pos === 'ataque') return 'AT';
     return '';
 }
 
@@ -522,11 +539,25 @@ function balanceLineTeams(linePool, teamSize) {
         ? pickPlayersByPosition(groups, requiredTotal)
         : groups;
 
-    const targets = {
-        defesa: { a: Math.ceil(selectedGroups.defesa.length / 2), b: Math.floor(selectedGroups.defesa.length / 2) },
-        meio: { a: Math.ceil(selectedGroups.meio.length / 2), b: Math.floor(selectedGroups.meio.length / 2) },
-        ataque: { a: Math.ceil(selectedGroups.ataque.length / 2), b: Math.floor(selectedGroups.ataque.length / 2) }
-    };
+    const positions = ['defesa', 'meio', 'ataque'];
+    const targets = {};
+    let sumA = 0;
+    const oddPositions = [];
+    positions.forEach(pos => {
+        const count = selectedGroups[pos].length;
+        const baseA = Math.floor(count / 2);
+        targets[pos] = { a: baseA, b: count - baseA };
+        sumA += baseA;
+        if (count % 2 === 1) oddPositions.push(pos);
+    });
+
+    let remainingA = teamSize - sumA;
+    shuffleArray([...oddPositions]).forEach(pos => {
+        if (remainingA <= 0) return;
+        targets[pos].a += 1;
+        targets[pos].b -= 1;
+        remainingA -= 1;
+    });
 
     const defense = snakeAssign(selectedGroups.defesa, targets.defesa.a, targets.defesa.b);
     const midfield = snakeAssign(selectedGroups.meio, targets.meio.a, targets.meio.b);

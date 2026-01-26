@@ -147,6 +147,25 @@ tr {
     text-align: center;
     white-space: nowrap;
 }
+.team-chip-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    min-width: 20px;
+    padding: 0 4px;
+    height: 18px;
+    border-radius: 999px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.team-chip-badge--gk {
+    background: #f59e0b;
+    color: #0f172a;
+}
 .team-chip--cinza {
     border-color: rgba(15, 23, 42, 0.2);
 }
