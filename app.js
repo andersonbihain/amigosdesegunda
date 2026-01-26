@@ -369,7 +369,7 @@ function renderTeamPickerResults() {
                     <span class="team-chip team-chip--gk">1 - ${gkName}<span class="team-chip-badge team-chip-badge--gk">GL</span></span>
                 </div>
                 <div class="team-pitch-line">
-                    ${players.map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
+                    ${sortPlayersByPosition(players).map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
                 </div>
             </div>
         </div>
@@ -394,11 +394,11 @@ function buildWhatsAppMessage() {
     };
     const cinzaList = [
         formatPlayer(teamPickerState.gkCinza, 1, true),
-        ...teamPickerState.cinza.map((p, idx) => formatPlayer(p, idx + 2))
+        ...sortPlayersByPosition(teamPickerState.cinza).map((p, idx) => formatPlayer(p, idx + 2))
     ];
     const brancoList = [
         formatPlayer(teamPickerState.gkBranco, 1, true),
-        ...teamPickerState.branco.map((p, idx) => formatPlayer(p, idx + 2))
+        ...sortPlayersByPosition(teamPickerState.branco).map((p, idx) => formatPlayer(p, idx + 2))
     ];
 
     return [
@@ -428,6 +428,21 @@ function getPlayerPositions(name) {
         ? profile.posicao.map(normalizePosition).filter(Boolean)
         : [];
     return positions;
+}
+
+function getPrimaryPosition(name) {
+    const positions = getPlayerPositions(name);
+    return positions[0] || 'meio';
+}
+
+function sortPlayersByPosition(players) {
+    const order = { defesa: 0, meio: 1, ataque: 2 };
+    return [...players].sort((a, b) => {
+        const posA = getPrimaryPosition(a);
+        const posB = getPrimaryPosition(b);
+        if (order[posA] !== order[posB]) return order[posA] - order[posB];
+        return a.localeCompare(b);
+    });
 }
 
 function getPositionBadgeInfo(name, isGk = false) {
