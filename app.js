@@ -331,9 +331,12 @@ function renderTeamPickerOptions() {
     if (currentBranco) gkBranco.value = currentBranco;
 
     list.innerHTML = teamPickerOptions.map((p, idx) => `
-        <label class="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded px-2 py-1">
-            <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
-            <span>${p}</span>
+        <label class="flex items-center justify-between gap-2 text-xs bg-white border border-slate-200 rounded px-2 py-1">
+            <span class="flex items-center gap-2">
+                <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
+                <span>${p}</span>
+            </span>
+            <span class="player-rating">R ${formatLineRating(p)}</span>
         </label>
     `).join('');
 
@@ -466,6 +469,11 @@ function getLineRating(name) {
     if (!stats || stats.lineMatches === 0) return 0;
     const ppg = stats.linePoints / stats.lineMatches;
     return Math.min(10, (ppg / 3) * 10);
+}
+
+function formatLineRating(name) {
+    const rating = getLineRating(name);
+    return Number.isFinite(rating) ? rating.toFixed(1) : '0.0';
 }
 
 function buildPositionGroups(linePool) {
@@ -688,6 +696,78 @@ function balanceLineTeamsWithFormation(linePool, teamSize) {
     return { teamCinza: split.teamCinza, teamBranco: split.teamBranco, missing };
 }
 
+function sumTeamRating(team) {
+    return team.reduce((sum, name) => sum + getLineRating(name), 0);
+}
+
+function buildTeamsByRatingThenAdjust(linePool, teamSize, maxDiff) {
+    const requiredTotal = teamSize * 2;
+    if (linePool.length < requiredTotal) {
+        return { error: `Selecione pelo menos ${requiredTotal} jogadores de linha (al\u00e9m dos goleiros).` };
+    }
+
+    const chosen = shuffleArray([...linePool]).slice(0, requiredTotal);
+    const { players, missing } = buildLinePlayers(chosen);
+    const seeded = snakeAssign(players, teamSize, teamSize);
+    let teamCinza = seeded.teamA.map(p => p.name);
+    let teamBranco = seeded.teamB.map(p => p.name);
+
+    const formation = getPreferredFormation(teamSize);
+    let formationOk = null;
+    if (formation && Object.keys(playerProfileMap).length > 0) {
+        const adjusted = adjustTeamsForFormation(teamCinza, teamBranco, formation, maxDiff);
+        teamCinza = adjusted.teamCinza;
+        teamBranco = adjusted.teamBranco;
+        formationOk = canMeetTeamFormation(teamCinza, formation) && canMeetTeamFormation(teamBranco, formation);
+    }
+
+    return { teamCinza, teamBranco, missing, formationOk };
+}
+
+function findBestFormationSwap(teamA, teamB, formation, maxDiff) {
+    let best = null;
+    for (let i = 0; i < teamA.length; i += 1) {
+        for (let j = 0; j < teamB.length; j += 1) {
+            const nextA = [...teamA];
+            const nextB = [...teamB];
+            nextA[i] = teamB[j];
+            nextB[j] = teamA[i];
+            if (!canMeetTeamFormation(nextA, formation) || !canMeetTeamFormation(nextB, formation)) continue;
+            const diff = Math.abs(sumTeamRating(nextA) - sumTeamRating(nextB));
+            if (diff > maxDiff) continue;
+            if (!best || diff < best.diff) {
+                best = { teamCinza: nextA, teamBranco: nextB, diff };
+            }
+        }
+    }
+    return best;
+}
+
+function adjustTeamsForFormation(teamA, teamB, formation, maxDiff) {
+    const initialOk = canMeetTeamFormation(teamA, formation) && canMeetTeamFormation(teamB, formation);
+    if (initialOk) return { teamCinza: teamA, teamBranco: teamB };
+
+    const direct = findBestFormationSwap(teamA, teamB, formation, maxDiff);
+    if (direct) return direct;
+
+    let best = null;
+    for (let i = 0; i < teamA.length; i += 1) {
+        for (let j = 0; j < teamB.length; j += 1) {
+            const tempA = [...teamA];
+            const tempB = [...teamB];
+            tempA[i] = teamB[j];
+            tempB[j] = teamA[i];
+            const candidate = findBestFormationSwap(tempA, tempB, formation, maxDiff);
+            if (!candidate) continue;
+            if (!best || candidate.diff < best.diff) {
+                best = candidate;
+            }
+        }
+    }
+
+    return best || { teamCinza: teamA, teamBranco: teamB };
+}
+
 function balanceLineTeams(linePool, teamSize) {
     const requiredTotal = teamSize * 2;
     if (linePool.length < requiredTotal) {
@@ -896,6 +976,7 @@ function initTeamPicker() {
             let teamCinza = [];
             let teamBranco = [];
             let missingPos = [];
+            let formationOk = null;
 
             if (Object.keys(playerProfileMap).length === 0) {
                 const required = teamSize * 2;
@@ -907,12 +988,7 @@ function initTeamPicker() {
                 teamCinza = chosen.slice(0, teamSize);
                 teamBranco = chosen.slice(teamSize, required);
             } else {
-                const preferred = balanceLineTeamsWithFormation(linePool, teamSize);
-                if (preferred && preferred.error) {
-                    if (statusEl) statusEl.textContent = preferred.error;
-                    return;
-                }
-                const result = preferred || balanceLineTeams(linePool, teamSize);
+                const result = buildTeamsByRatingThenAdjust(linePool, teamSize, 2);
                 if (result.error) {
                     if (statusEl) statusEl.textContent = result.error;
                     return;
@@ -920,6 +996,7 @@ function initTeamPicker() {
                 teamCinza = result.teamCinza;
                 teamBranco = result.teamBranco;
                 missingPos = result.missing || [];
+                formationOk = result.formationOk;
             }
 
             teamPickerState.cinza = teamCinza;
@@ -939,7 +1016,10 @@ function initTeamPicker() {
                 const missingInfo = missingPos.length > 0
                     ? ` Posicao pendente para: ${missingPos.join(', ')}.`
                     : '';
-                statusEl.textContent = `Times sorteados com sucesso.${extraInfo}${missingInfo}`;
+                const formationInfo = formationOk === false
+                    ? ' Formacao 2-3-2 nao foi possivel manter com equilibrio.'
+                    : '';
+                statusEl.textContent = `Times sorteados com sucesso.${extraInfo}${missingInfo}${formationInfo}`;
             }
         });
     }

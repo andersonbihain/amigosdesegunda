@@ -192,6 +192,15 @@ tr {
     box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.8);
     border-color: rgba(251, 191, 36, 0.9);
 }
+.player-rating {
+    font-size: 10px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #e2e8f0;
+    border-radius: 999px;
+    padding: 1px 6px;
+    border: 1px solid #cbd5e1;
+}
 
 /* Slider duplo em uma barra */
 .range-dual {

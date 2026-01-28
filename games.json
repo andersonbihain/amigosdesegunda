@@ -1689,5 +1689,69 @@
     "cinza": 13,
     "branco": 8
   }
+},
+{
+  "id": 54,
+  "data": "19/01/2026",
+  "cinza": {
+    "goleiro": "Luan",
+    "linha": [
+      "Portinho",
+      "Admar",
+      "Bihain",
+      "Gessé",
+      "Eliezer",
+      "Assis",
+      "Odacir"
+    ]
+  },
+  "branco": {
+    "goleiro": "Michel",
+    "linha": [
+      "Ivan",
+      "Adriano",
+      "Duda",
+      "João",
+      "Gabriel",
+      "Daniel",
+      "Ávila"
+    ]
+  },
+  "placar": {
+    "cinza": 16,
+    "branco": 12
+  }
+},
+{
+  "id": 55,
+  "data": "26/01/2026",
+  "cinza": {
+    "goleiro": "Dudu",
+    "linha": [
+      "Portinho",
+      "Caçapava",
+      "Duda",
+      "Rodrigo",
+      "Adriano",
+      "Pablo",
+      "Santiago"
+    ]
+  },
+  "branco": {
+    "goleiro": "Luan",
+    "linha": [
+      "Aderson",
+      "Eliezer",
+      "Gessé",
+      "Bihain",
+      "Gabriel",
+      "Daniel",
+      "Alex"
+    ]
+  },
+  "placar": {
+    "cinza": 9,
+    "branco": 16
+  }
 }
 ]
