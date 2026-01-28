@@ -74,6 +74,7 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
+    initAddPlayerForm();
     Promise.all([
         fetch('games.json').then(res => res.json()),
         fetch('players.json')
@@ -183,16 +184,18 @@ function buildPlayerStatsFromGames(games) {
     const stats = {};
     let totalGkGoals = 0;
     let totalGkMatches = 0;
+    const lineResults = {};
 
     const ensure = (name) => {
         const pName = standardize(name);
         if (!stats[pName]) {
-            stats[pName] = { lineMatches: 0, linePoints: 0, gkMatches: 0, gkGoals: 0 };
+            stats[pName] = { lineMatches: 0, linePoints: 0, gkMatches: 0, gkGoals: 0, lineWeightedMatches: 0, lineWeightedPoints: 0 };
         }
         return stats[pName];
     };
 
-    games.forEach(game => {
+    const orderedGames = [...games].sort((a, b) => a.id - b.id);
+    orderedGames.forEach(game => {
         const golsC = game.placar.cinza;
         const golsB = game.placar.branco;
         let resCinza, resBranco;
@@ -205,6 +208,10 @@ function buildPlayerStatsFromGames(games) {
             p.lineMatches++;
             if (result === 'V') p.linePoints += 3;
             if (result === 'E') p.linePoints += 1;
+            const points = result === 'V' ? 3 : result === 'E' ? 1 : 0;
+            const key = standardize(name);
+            if (!lineResults[key]) lineResults[key] = [];
+            lineResults[key].push(points);
         };
         const addGk = (name, goalsAgainst) => {
             const p = ensure(name);
@@ -218,6 +225,17 @@ function buildPlayerStatsFromGames(games) {
         addGk(game.branco.goleiro, golsC);
         game.cinza.linha.forEach(n => addLine(n, resCinza));
         game.branco.linha.forEach(n => addLine(n, resBranco));
+    });
+
+    Object.keys(lineResults).forEach(name => {
+        const results = lineResults[name];
+        const p = ensure(name);
+        const startWeighted = Math.max(0, results.length - 10);
+        results.forEach((points, idx) => {
+            const weight = idx >= startWeighted ? 1.2 : 1.0;
+            p.lineWeightedPoints += points * weight;
+            p.lineWeightedMatches += weight;
+        });
     });
 
     const gkAvg = totalGkMatches > 0 ? (totalGkGoals / totalGkMatches) : 0;
@@ -268,6 +286,89 @@ function initAddGameForm() {
         applyFilter();
         statusEl.textContent = `Jogo ${nextId} adicionado (somente nesta sessão).`;
         form.reset();
+    });
+}
+
+function calculateInitialRating(phys, tech, tactic) {
+    const weighted = (tech * 0.45) + (phys * 0.35) + (tactic * 0.20);
+    const normalized = Math.max(0, Math.min(10, (weighted / 5) * 10));
+    return normalized;
+}
+
+function initAddPlayerForm() {
+    const form = document.getElementById('add-player-form');
+    if (!form) return;
+
+    const nameInput = document.getElementById('add-player-name');
+    const primarySelect = document.getElementById('add-player-pos-primary');
+    const secondarySelect = document.getElementById('add-player-pos-secondary');
+    const gkInput = document.getElementById('add-player-gk');
+    const physSelect = document.getElementById('add-player-phys');
+    const techSelect = document.getElementById('add-player-tech');
+    const tacticSelect = document.getElementById('add-player-tactic');
+    const ratingPreview = document.getElementById('add-player-rating-preview');
+    const statusEl = document.getElementById('add-player-status');
+
+    const updatePreview = () => {
+        const phys = parseInt(physSelect.value, 10) || 1;
+        const tech = parseInt(techSelect.value, 10) || 1;
+        const tactic = parseInt(tacticSelect.value, 10) || 1;
+        const rating = calculateInitialRating(phys, tech, tactic);
+        ratingPreview.textContent = rating.toFixed(1);
+    };
+
+    [physSelect, techSelect, tacticSelect].forEach(select => {
+        select.addEventListener('change', updatePreview);
+    });
+    updatePreview();
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (statusEl) statusEl.textContent = '';
+        const rawName = nameInput.value.trim();
+        if (!rawName) {
+            if (statusEl) statusEl.textContent = 'Informe o nome do atleta.';
+            return;
+        }
+
+        const name = standardize(rawName);
+        if (playerProfileMap[name]) {
+            if (statusEl) statusEl.textContent = 'Esse atleta ja existe na lista.';
+            return;
+        }
+
+        const primary = primarySelect.value;
+        const secondary = Array.from(secondarySelect.selectedOptions).map(o => o.value).filter(Boolean);
+        const secondaryFiltered = secondary.filter(pos => pos !== primary);
+        const phys = parseInt(physSelect.value, 10) || 1;
+        const tech = parseInt(techSelect.value, 10) || 1;
+        const tactic = parseInt(tacticSelect.value, 10) || 1;
+        const rating = parseFloat(calculateInitialRating(phys, tech, tactic).toFixed(1));
+
+        const profile = {
+            nome: name,
+            posicao: [primary, ...secondaryFiltered],
+            posicao_secundaria: secondaryFiltered,
+            goleiro: Boolean(gkInput.checked),
+            rating_linha: rating,
+            rating_gk: null
+        };
+
+        playerProfiles.push(profile);
+        playerProfileMap[name] = {
+            nome: name,
+            posicao: profile.posicao,
+            goleiro: profile.goleiro,
+            rating_linha: rating,
+            rating_gk: null
+        };
+
+        playerOptions = Array.from(new Set([...playerOptions, name])).sort();
+        renderTeamPickerOptions();
+        nameInput.value = '';
+        gkInput.checked = false;
+        secondarySelect.querySelectorAll('option').forEach(opt => { opt.selected = false; });
+        if (statusEl) statusEl.textContent = `Atleta ${name} adicionado nesta sessao.`;
     });
 }
 
@@ -466,8 +567,8 @@ function getLineRating(name) {
         return profile.rating_linha;
     }
     const stats = playerStats[name];
-    if (!stats || stats.lineMatches === 0) return 0;
-    const ppg = stats.linePoints / stats.lineMatches;
+    if (!stats || stats.lineWeightedMatches === 0) return 0;
+    const ppg = stats.lineWeightedPoints / stats.lineWeightedMatches;
     return Math.min(10, (ppg / 3) * 10);
 }
 
