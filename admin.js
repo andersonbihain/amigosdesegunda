@@ -1,6 +1,6 @@
 const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let gamesAdmin = [];
 let playersAdmin = [];
@@ -14,9 +14,9 @@ function initAdminAuth() {
     const lockEmail = document.getElementById('admin-lock-email');
     const lockInput = document.getElementById('admin-lock-input');
     const errorEl = document.getElementById('admin-lock-error');
-    if (!lockForm || !supabase) return;
+    if (!lockForm || !supabaseClient) return;
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabaseClient.auth.getSession().then(({ data }) => {
         if (data?.session) {
             unlock();
         }
@@ -31,7 +31,7 @@ function initAdminAuth() {
             if (errorEl) errorEl.textContent = 'Informe e-mail e senha.';
             return;
         }
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
             if (errorEl) errorEl.textContent = 'Falha ao entrar. Verifique os dados.';
             return;
@@ -56,15 +56,15 @@ function initLogout() {
     const btn = document.getElementById('admin-logout');
     if (!btn) return;
     btn.addEventListener('click', async () => {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         window.location.reload();
     });
 }
 
 async function loadAdminData() {
     const [{ data: games, error: gamesError }, { data: players, error: playersError }] = await Promise.all([
-        supabase.from('games').select('*').order('id', { ascending: true }),
-        supabase.from('players').select('*').order('nome', { ascending: true })
+        supabaseClient.from('games').select('*').order('id', { ascending: true }),
+        supabaseClient.from('players').select('*').order('nome', { ascending: true })
     ]);
     if (gamesError) console.error('Erro ao carregar jogos:', gamesError);
     if (playersError) console.error('Erro ao carregar jogadores:', playersError);
@@ -126,7 +126,7 @@ function initAddGameForm() {
             placar: { cinza: scoreC, branco: scoreB }
         };
 
-        const { error } = await supabase.from('games').insert(newGame);
+        const { error } = await supabaseClient.from('games').insert(newGame);
         if (error) {
             if (statusEl) statusEl.textContent = 'Erro ao salvar jogo.';
             console.error(error);
@@ -200,7 +200,7 @@ function initAddPlayerForm() {
             rating_gk: null
         };
 
-        const { error } = await supabase.from('players').insert(profile);
+        const { error } = await supabaseClient.from('players').insert(profile);
         if (error) {
             if (statusEl) statusEl.textContent = 'Erro ao salvar atleta.';
             console.error(error);
@@ -224,7 +224,7 @@ function initRemovePlayer() {
         const select = document.getElementById('remove-player-select');
         const id = select?.value;
         if (!id) return;
-        const { error } = await supabase.from('players').delete().eq('id', id);
+        const { error } = await supabaseClient.from('players').delete().eq('id', id);
         if (error) {
             if (statusEl) statusEl.textContent = 'Erro ao remover atleta.';
             console.error(error);
@@ -236,8 +236,8 @@ function initRemovePlayer() {
 }
 
 async function recomputeRatingsAndUpdate() {
-    const { data: games, error: gamesError } = await supabase.from('games').select('*').order('id', { ascending: true });
-    const { data: players, error: playersError } = await supabase.from('players').select('*');
+    const { data: games, error: gamesError } = await supabaseClient.from('games').select('*').order('id', { ascending: true });
+    const { data: players, error: playersError } = await supabaseClient.from('players').select('*');
     if (gamesError || playersError) return;
     const lineResults = {};
 
@@ -276,6 +276,6 @@ async function recomputeRatingsAndUpdate() {
     });
 
     for (const update of updates) {
-        await supabase.from('players').update({ rating_linha: update.rating_linha }).eq('id', update.id);
+        await supabaseClient.from('players').update({ rating_linha: update.rating_linha }).eq('id', update.id);
     }
 }

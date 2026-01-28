@@ -32,7 +32,7 @@ const NAME_MAPPING = {
 
 const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 function standardize(name) {
     if (!name) return 'Desconhecido';
@@ -83,10 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadFromSupabase() {
     try {
-        if (!supabase) throw new Error('Supabase nao carregou.');
+        if (!supabaseClient) throw new Error('Supabase nao carregou.');
         const [{ data: games, error: gamesError }, { data: profiles, error: profilesError }] = await Promise.all([
-            supabase.from('games').select('*').order('id', { ascending: true }),
-            supabase.from('players').select('*').order('nome', { ascending: true })
+            supabaseClient.from('games').select('*').order('id', { ascending: true }),
+            supabaseClient.from('players').select('*').order('nome', { ascending: true })
         ]);
         if (gamesError) throw gamesError;
         if (profilesError) throw profilesError;
