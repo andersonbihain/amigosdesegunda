@@ -38,8 +38,12 @@
     <main id="admin-content" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
         <div class="flex items-center justify-between mb-6">
             <p class="text-xs text-slate-500">Conectado ao Supabase. Altera&ccedil;&otilde;es persistem nos bancos.</p>
-            <button id="admin-logout" type="button" class="text-xs font-semibold bg-slate-900 text-white px-3 py-2 rounded hover:bg-slate-800">Sair</button>
+            <div class="flex items-center gap-2">
+                <button id="recompute-ratings" type="button" class="text-xs font-semibold bg-emerald-600 text-white px-3 py-2 rounded hover:bg-emerald-700">Recalcular ratings</button>
+                <button id="admin-logout" type="button" class="text-xs font-semibold bg-slate-900 text-white px-3 py-2 rounded hover:bg-slate-800">Sair</button>
+            </div>
         </div>
+        <p id="recompute-status" class="text-xs text-amber-600 mb-6"></p>
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8">
             <div class="flex flex-col gap-2 mb-4">
                 <h1 class="text-xl font-bold text-slate-800">Cadastrar jogo</h1>

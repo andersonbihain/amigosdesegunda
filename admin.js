@@ -51,6 +51,7 @@ function unlock() {
     if (lock) lock.classList.add('hidden');
     if (content) content.classList.remove('hidden');
     initLogout();
+    initRecomputeRatings();
     loadAdminData();
     initAddGameForm();
     initAddPlayerForm();
@@ -67,6 +68,29 @@ function initLogout() {
     });
 }
 
+function initRecomputeRatings() {
+    const btn = document.getElementById('recompute-ratings');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        const statusEl = document.getElementById('recompute-status');
+        if (statusEl) statusEl.textContent = 'Recalculando ratings...';
+        await recomputeRatingsAndUpdate();
+        await loadAdminData();
+        if (statusEl) statusEl.textContent = 'Ratings atualizados.';
+    });
+}
+
+async function maybeAutoRecomputeRatings() {
+    if (gamesAdmin.length === 0 || playersAdmin.length === 0) return;
+    const hasAnyRating = playersAdmin.some(p => p.rating_linha !== null || p.rating_gk !== null);
+    if (hasAnyRating) return;
+    const statusEl = document.getElementById('recompute-status');
+    if (statusEl) statusEl.textContent = 'Recalculando ratings iniciais...';
+    await recomputeRatingsAndUpdate();
+    await loadAdminData();
+    if (statusEl) statusEl.textContent = 'Ratings iniciais calculados.';
+}
+
 async function loadAdminData() {
     const [{ data: games, error: gamesError }, { data: players, error: playersError }] = await Promise.all([
         supabaseClient.from('games').select('*').order('id', { ascending: true }),
@@ -79,6 +103,7 @@ async function loadAdminData() {
     rebuildPlayerOptionsAdmin();
     rebuildRemovePlayerOptions();
     rebuildEditPlayerOptions();
+    maybeAutoRecomputeRatings();
 }
 
 function rebuildPlayerOptionsAdmin() {
