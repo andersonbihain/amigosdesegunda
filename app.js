@@ -97,8 +97,12 @@ async function loadFromSupabase() {
         initDateFilter();
         initAddGameForm();
         applyFilter();
+        const lastUpdate = document.getElementById('last-update');
+        if (lastUpdate) lastUpdate.textContent = `Dados carregados (${originalGames.length} jogos)`;
     } catch (err) {
         console.error('Erro ao carregar dados:', err);
+        const lastUpdate = document.getElementById('last-update');
+        if (lastUpdate) lastUpdate.textContent = 'Erro ao carregar dados (ver console)';
     }
 }
 
