@@ -333,6 +333,7 @@ async function recomputeRatingsAndUpdate() {
     const { data: players, error: playersError } = await supabaseClient.from('players').select('*');
     if (gamesError || playersError) return;
     const lineResults = {};
+    const gkResults = {};
 
     (games || []).forEach(game => {
         const golsC = game.placar?.cinza ?? 0;
@@ -348,6 +349,14 @@ async function recomputeRatingsAndUpdate() {
         };
         (game.cinza?.linha || []).forEach(n => addLine(n, resCinza));
         (game.branco?.linha || []).forEach(n => addLine(n, resBranco));
+
+        const addGk = (name, goalsAgainst) => {
+            if (!name) return;
+            if (!gkResults[name]) gkResults[name] = [];
+            gkResults[name].push(goalsAgainst);
+        };
+        addGk(game.cinza?.goleiro, golsB);
+        addGk(game.branco?.goleiro, golsC);
     });
 
     const updates = [];
@@ -368,7 +377,23 @@ async function recomputeRatingsAndUpdate() {
         updates.push({ id: player.id, rating_linha: parseFloat(rating.toFixed(1)) });
     });
 
+    (players || []).forEach(player => {
+        const gkList = gkResults[player.nome] || [];
+        if (gkList.length === 0) return;
+        const avgAgainst = gkList.reduce((sum, val) => sum + val, 0) / gkList.length;
+        const ratingGk = Math.max(0, Math.min(10, 10 - avgAgainst));
+        const existing = updates.find(u => u.id === player.id);
+        if (existing) {
+            existing.rating_gk = parseFloat(ratingGk.toFixed(1));
+        } else {
+            updates.push({ id: player.id, rating_gk: parseFloat(ratingGk.toFixed(1)) });
+        }
+    });
+
     for (const update of updates) {
-        await supabaseClient.from('players').update({ rating_linha: update.rating_linha }).eq('id', update.id);
+        const payload = {};
+        if (typeof update.rating_linha === 'number') payload.rating_linha = update.rating_linha;
+        if (typeof update.rating_gk === 'number') payload.rating_gk = update.rating_gk;
+        await supabaseClient.from('players').update(payload).eq('id', update.id);
     }
 }
