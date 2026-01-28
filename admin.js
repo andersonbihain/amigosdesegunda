@@ -14,7 +14,11 @@ function initAdminAuth() {
     const lockEmail = document.getElementById('admin-lock-email');
     const lockInput = document.getElementById('admin-lock-input');
     const errorEl = document.getElementById('admin-lock-error');
-    if (!lockForm || !supabaseClient) return;
+    if (!lockForm) return;
+    if (!supabaseClient) {
+        if (errorEl) errorEl.textContent = 'Falha ao carregar Supabase. Atualize a pagina.';
+        return;
+    }
 
     supabaseClient.auth.getSession().then(({ data }) => {
         if (data?.session) {
@@ -33,7 +37,8 @@ function initAdminAuth() {
         }
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
-            if (errorEl) errorEl.textContent = 'Falha ao entrar. Verifique os dados.';
+            if (errorEl) errorEl.textContent = error.message || 'Falha ao entrar. Verifique os dados.';
+            console.error('Auth error:', error);
             return;
         }
         unlock();
