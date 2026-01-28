@@ -336,7 +336,7 @@ function renderTeamPickerOptions() {
                 <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
                 <span>${p}</span>
             </span>
-            <span class="player-rating">R ${formatLineRating(p)}</span>
+            <span class="player-rating" style="${getRatingStyle(p)}">R ${formatLineRating(p)}</span>
         </label>
     `).join('');
 
@@ -474,6 +474,15 @@ function getLineRating(name) {
 function formatLineRating(name) {
     const rating = getLineRating(name);
     return Number.isFinite(rating) ? rating.toFixed(1) : '0.0';
+}
+
+function getRatingStyle(name) {
+    const rating = Math.max(0, Math.min(10, getLineRating(name)));
+    const hue = Math.round((rating / 10) * 120);
+    const bg = `hsl(${hue}, 70%, 85%)`;
+    const border = `hsl(${hue}, 70%, 45%)`;
+    const text = `hsl(${hue}, 60%, 25%)`;
+    return `background:${bg};border-color:${border};color:${text};`;
 }
 
 function buildPositionGroups(linePool) {

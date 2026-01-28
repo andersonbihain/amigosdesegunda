@@ -195,11 +195,11 @@ tr {
 .player-rating {
     font-size: 10px;
     font-weight: 600;
-    color: #0f172a;
-    background: #e2e8f0;
     border-radius: 999px;
     padding: 1px 6px;
     border: 1px solid #cbd5e1;
+    text-align: center;
+    min-width: 44px;
 }
 
 /* Slider duplo em uma barra */
