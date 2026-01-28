@@ -54,6 +54,7 @@ function unlock() {
     loadAdminData();
     initAddGameForm();
     initAddPlayerForm();
+    initEditPlayerForm();
     initRemovePlayer();
 }
 
@@ -77,6 +78,7 @@ async function loadAdminData() {
     playersAdmin = Array.isArray(players) ? players : [];
     rebuildPlayerOptionsAdmin();
     rebuildRemovePlayerOptions();
+    rebuildEditPlayerOptions();
 }
 
 function rebuildPlayerOptionsAdmin() {
@@ -93,6 +95,18 @@ function rebuildRemovePlayerOptions() {
     select.innerHTML = playersAdmin
         .map(p => `<option value="${p.id}">${p.nome}</option>`)
         .join('');
+}
+
+function rebuildEditPlayerOptions() {
+    const select = document.getElementById('edit-player-select');
+    if (!select) return;
+    select.innerHTML = playersAdmin
+        .map(p => `<option value="${p.id}">${p.nome}</option>`)
+        .join('');
+    if (playersAdmin.length > 0) {
+        select.value = playersAdmin[0].id;
+        fillEditPlayerForm(playersAdmin[0]);
+    }
 }
 
 function fillSelect(id, options, multiple = false) {
@@ -237,6 +251,80 @@ function initRemovePlayer() {
         }
         await loadAdminData();
         if (statusEl) statusEl.textContent = 'Atleta removido.';
+    });
+}
+
+function fillEditPlayerForm(player) {
+    const nameInput = document.getElementById('edit-player-name');
+    const primarySelect = document.getElementById('edit-player-pos-primary');
+    const secondarySelect = document.getElementById('edit-player-pos-secondary');
+    const gkInput = document.getElementById('edit-player-gk');
+    const ratingLine = document.getElementById('edit-player-rating-line');
+    const ratingGk = document.getElementById('edit-player-rating-gk');
+    if (!player) return;
+
+    const primary = Array.isArray(player.posicao) && player.posicao.length > 0 ? player.posicao[0] : 'meio';
+    const secondary = Array.isArray(player.posicao_secundaria) ? player.posicao_secundaria : [];
+    nameInput.value = player.nome || '';
+    primarySelect.value = primary;
+    secondarySelect.querySelectorAll('option').forEach(opt => {
+        opt.selected = secondary.includes(opt.value);
+    });
+    gkInput.checked = Boolean(player.goleiro);
+    ratingLine.value = player.rating_linha ?? '';
+    ratingGk.value = player.rating_gk ?? '';
+}
+
+function initEditPlayerForm() {
+    const form = document.getElementById('edit-player-form');
+    const select = document.getElementById('edit-player-select');
+    if (!form || !select) return;
+
+    select.addEventListener('change', () => {
+        const player = playersAdmin.find(p => p.id === select.value);
+        if (player) fillEditPlayerForm(player);
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const statusEl = document.getElementById('edit-player-status');
+        if (statusEl) statusEl.textContent = '';
+        const id = select.value;
+        const nameInput = document.getElementById('edit-player-name');
+        const primarySelect = document.getElementById('edit-player-pos-primary');
+        const secondarySelect = document.getElementById('edit-player-pos-secondary');
+        const gkInput = document.getElementById('edit-player-gk');
+        const ratingLine = document.getElementById('edit-player-rating-line');
+        const ratingGk = document.getElementById('edit-player-rating-gk');
+
+        const nome = nameInput.value.trim();
+        if (!nome) {
+            if (statusEl) statusEl.textContent = 'Informe o nome do atleta.';
+            return;
+        }
+        const primary = primarySelect.value;
+        const secondary = Array.from(secondarySelect.selectedOptions).map(o => o.value).filter(Boolean);
+        const secondaryFiltered = secondary.filter(pos => pos !== primary);
+        const ratingLineVal = ratingLine.value !== '' ? parseFloat(ratingLine.value) : null;
+        const ratingGkVal = ratingGk.value !== '' ? parseFloat(ratingGk.value) : null;
+
+        const update = {
+            nome,
+            posicao: [primary, ...secondaryFiltered],
+            posicao_secundaria: secondaryFiltered,
+            goleiro: Boolean(gkInput.checked),
+            rating_linha: ratingLineVal,
+            rating_gk: ratingGkVal
+        };
+
+        const { error } = await supabaseClient.from('players').update(update).eq('id', id);
+        if (error) {
+            if (statusEl) statusEl.textContent = 'Erro ao salvar alteracoes.';
+            console.error(error);
+            return;
+        }
+        await loadAdminData();
+        if (statusEl) statusEl.textContent = 'Atleta atualizado.';
     });
 }
 
