@@ -30,6 +30,10 @@ const NAME_MAPPING = {
     'sandro': 'Sandro'
 };
 
+const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 function standardize(name) {
     if (!name) return 'Desconhecido';
     const lower = name.toString().trim().toLowerCase();
@@ -74,24 +78,29 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
-    initAddPlayerForm();
-    Promise.all([
-        fetch('games.json').then(res => res.json()),
-        fetch('players.json')
-            .then(res => res.ok ? res.json() : [])
-            .catch(() => [])
-    ])
-        .then(([games, profiles]) => {
-            originalGames = games;
-            setPlayerProfiles(profiles);
-            rebuildPlayerStats(originalGames);
-            rebuildPlayerOptions(originalGames);
-            initDateFilter();
-            initAddGameForm();
-            applyFilter();
-        })
-        .catch(err => console.error('Erro ao carregar dados:', err));
+    loadFromSupabase();
 });
+
+async function loadFromSupabase() {
+    try {
+        if (!supabase) throw new Error('Supabase nao carregou.');
+        const [{ data: games, error: gamesError }, { data: profiles, error: profilesError }] = await Promise.all([
+            supabase.from('games').select('*').order('id', { ascending: true }),
+            supabase.from('players').select('*').order('nome', { ascending: true })
+        ]);
+        if (gamesError) throw gamesError;
+        if (profilesError) throw profilesError;
+        originalGames = Array.isArray(games) ? games : [];
+        setPlayerProfiles(profiles || []);
+        rebuildPlayerStats(originalGames);
+        rebuildPlayerOptions(originalGames);
+        initDateFilter();
+        initAddGameForm();
+        applyFilter();
+    } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+    }
+}
 
 // --- FILTRO DE DATA (SLIDERS) ---
 function initDateFilter() {
@@ -137,12 +146,16 @@ function initDateFilter() {
 
 function rebuildPlayerOptions(games) {
     const set = new Set();
-    games.forEach(g => {
-        set.add(standardize(g.cinza.goleiro));
-        set.add(standardize(g.branco.goleiro));
-        g.cinza.linha.forEach(n => set.add(standardize(n)));
-        g.branco.linha.forEach(n => set.add(standardize(n)));
-    });
+    if (playerProfiles.length > 0) {
+        playerProfiles.forEach(p => set.add(standardize(p.nome)));
+    } else {
+        games.forEach(g => {
+            set.add(standardize(g.cinza.goleiro));
+            set.add(standardize(g.branco.goleiro));
+            g.cinza.linha.forEach(n => set.add(standardize(n)));
+            g.branco.linha.forEach(n => set.add(standardize(n)));
+        });
+    }
     playerOptions = Array.from(set).sort();
     const renderSelect = (id, multiple=false) => {
         const el = document.getElementById(id);

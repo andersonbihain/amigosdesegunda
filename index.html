@@ -21,7 +21,7 @@
                     <span class="text-2xl font-bold">⚽ FutStats</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="admin.html" class="text-xs font-semibold bg-white text-blue-900 px-3 py-2 rounded shadow hover:bg-blue-50">Cadastrar jogo</a>
+                    <a href="admin.html" class="text-xs font-semibold bg-white text-blue-900 px-3 py-2 rounded shadow hover:bg-blue-50">Administra&ccedil;&atilde;o</a>
                     <button id="open-team-picker" type="button" class="text-xs font-semibold bg-amber-400 text-slate-900 px-3 py-2 rounded shadow hover:bg-amber-300">Escolher time</button>
                     <div class="text-sm bg-blue-800 px-3 py-1 rounded-full" id="last-update">
                         Carregando dados...
@@ -253,74 +253,6 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border border-slate-200 rounded-lg p-4">
-                        <h3 class="text-sm font-semibold text-slate-700 mb-3">Adicionar atleta</h3>
-                        <form id="add-player-form" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label class="text-xs font-semibold text-slate-500">
-                                Nome
-                                <input id="add-player-name" type="text" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm" required>
-                            </label>
-                            <label class="text-xs font-semibold text-slate-500">
-                                Posi&ccedil;&atilde;o principal
-                                <select id="add-player-pos-primary" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                    <option value="defesa">Defesa</option>
-                                    <option value="meio">Meio</option>
-                                    <option value="ataque">Ataque</option>
-                                </select>
-                            </label>
-                            <label class="text-xs font-semibold text-slate-500 md:col-span-2">
-                                Posi&ccedil;&atilde;o secund&aacute;ria (opcional)
-                                <select id="add-player-pos-secondary" multiple class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                    <option value="defesa">Defesa</option>
-                                    <option value="meio">Meio</option>
-                                    <option value="ataque">Ataque</option>
-                                </select>
-                            </label>
-                            <label class="text-xs font-semibold text-slate-500 flex items-center gap-2">
-                                <input id="add-player-gk" type="checkbox" class="rounded border-slate-300">
-                                Goleiro
-                            </label>
-                            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <label class="text-xs font-semibold text-slate-500">
-                                    Preparo f&iacute;sico
-                                    <select id="add-player-phys" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                        <option value="1">1 &#9733;</option>
-                                        <option value="2">2 &#9733;&#9733;</option>
-                                        <option value="3" selected>3 &#9733;&#9733;&#9733;</option>
-                                        <option value="4">4 &#9733;&#9733;&#9733;&#9733;</option>
-                                        <option value="5">5 &#9733;&#9733;&#9733;&#9733;&#9733;</option>
-                                    </select>
-                                </label>
-                                <label class="text-xs font-semibold text-slate-500">
-                                    N&iacute;vel t&eacute;cnico
-                                    <select id="add-player-tech" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                        <option value="1">1 &#9733;</option>
-                                        <option value="2">2 &#9733;&#9733;</option>
-                                        <option value="3" selected>3 &#9733;&#9733;&#9733;</option>
-                                        <option value="4">4 &#9733;&#9733;&#9733;&#9733;</option>
-                                        <option value="5">5 &#9733;&#9733;&#9733;&#9733;&#9733;</option>
-                                    </select>
-                                </label>
-                                <label class="text-xs font-semibold text-slate-500">
-                                    Intelig&ecirc;ncia t&aacute;tica
-                                    <select id="add-player-tactic" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                                        <option value="1">1 &#9733;</option>
-                                        <option value="2">2 &#9733;&#9733;</option>
-                                        <option value="3" selected>3 &#9733;&#9733;&#9733;</option>
-                                        <option value="4">4 &#9733;&#9733;&#9733;&#9733;</option>
-                                        <option value="5">5 &#9733;&#9733;&#9733;&#9733;&#9733;</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div class="md:col-span-2 flex items-center justify-between gap-3">
-                                <p class="text-xs text-slate-500">Rating inicial: <span id="add-player-rating-preview" class="font-semibold">6.0</span></p>
-                                <button type="submit" class="bg-slate-900 text-white text-xs font-semibold px-3 py-2 rounded hover:bg-slate-800">Adicionar atleta</button>
-                            </div>
-                            <p id="add-player-status" class="md:col-span-2 text-xs text-amber-600"></p>
-                            <p class="md:col-span-2 text-[11px] text-slate-400">Salvo apenas nesta sess&atilde;o. Para manter, atualize o players.json.</p>
-                        </form>
-                    </div>
-
                     <div id="team-draw-results" class="grid grid-cols-1 gap-4">
                         <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
                             <div class="border border-slate-200 rounded-lg p-4">
@@ -341,6 +273,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
 </html>

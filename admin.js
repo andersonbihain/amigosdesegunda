@@ -1,29 +1,42 @@
-// Carrega jogos e nomes para o formulário
+const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
 let gamesAdmin = [];
-let playerOptionsAdmin = [];
-const ADMIN_PASSWORD = 'mudeseusenhaaqui'; // troque aqui a senha
+let playersAdmin = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    initLock();
+    initAdminAuth();
 });
 
-function initLock() {
+function initAdminAuth() {
     const lockForm = document.getElementById('admin-lock-form');
+    const lockEmail = document.getElementById('admin-lock-email');
     const lockInput = document.getElementById('admin-lock-input');
     const errorEl = document.getElementById('admin-lock-error');
-    const stored = sessionStorage.getItem('admin_unlocked');
-    if (stored === '1') {
-        unlock();
-        return;
-    }
-    lockForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (lockInput.value === ADMIN_PASSWORD) {
-            sessionStorage.setItem('admin_unlocked', '1');
+    if (!lockForm || !supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+        if (data?.session) {
             unlock();
-        } else {
-            errorEl.textContent = 'Senha incorreta.';
         }
+    });
+
+    lockForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (errorEl) errorEl.textContent = '';
+        const email = lockEmail.value.trim();
+        const password = lockInput.value;
+        if (!email || !password) {
+            if (errorEl) errorEl.textContent = 'Informe e-mail e senha.';
+            return;
+        }
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            if (errorEl) errorEl.textContent = 'Falha ao entrar. Verifique os dados.';
+            return;
+        }
+        unlock();
     });
 }
 
@@ -32,53 +45,65 @@ function unlock() {
     const content = document.getElementById('admin-content');
     if (lock) lock.classList.add('hidden');
     if (content) content.classList.remove('hidden');
-    loadGamesAdmin();
+    initLogout();
+    loadAdminData();
+    initAddGameForm();
+    initAddPlayerForm();
+    initRemovePlayer();
 }
 
-function loadGamesAdmin() {
-    fetch('games.json')
-        .then(res => res.json())
-        .then(data => {
-            gamesAdmin = data;
-            rebuildPlayerOptionsAdmin(data);
-            initFormAdmin();
-        })
-        .catch(err => console.error('Erro ao carregar jogos:', err));
-}
-
-function standardizeAdmin(name) {
-    if (!name) return 'Desconhecido';
-    return name.toString().trim();
-}
-
-function rebuildPlayerOptionsAdmin(games) {
-    const set = new Set();
-    games.forEach(g => {
-        set.add(standardizeAdmin(g.cinza.goleiro));
-        set.add(standardizeAdmin(g.branco.goleiro));
-        g.cinza.linha.forEach(n => set.add(standardizeAdmin(n)));
-        g.branco.linha.forEach(n => set.add(standardizeAdmin(n)));
+function initLogout() {
+    const btn = document.getElementById('admin-logout');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.reload();
     });
-    playerOptionsAdmin = Array.from(set).sort();
-    fillSelect('add-gk-cinza');
-    fillSelect('add-gk-branco');
-    fillSelect('add-line-cinza', true);
-    fillSelect('add-line-branco', true);
 }
 
-function fillSelect(id, multiple=false) {
+async function loadAdminData() {
+    const [{ data: games, error: gamesError }, { data: players, error: playersError }] = await Promise.all([
+        supabase.from('games').select('*').order('id', { ascending: true }),
+        supabase.from('players').select('*').order('nome', { ascending: true })
+    ]);
+    if (gamesError) console.error('Erro ao carregar jogos:', gamesError);
+    if (playersError) console.error('Erro ao carregar jogadores:', playersError);
+    gamesAdmin = Array.isArray(games) ? games : [];
+    playersAdmin = Array.isArray(players) ? players : [];
+    rebuildPlayerOptionsAdmin();
+    rebuildRemovePlayerOptions();
+}
+
+function rebuildPlayerOptionsAdmin() {
+    const names = playersAdmin.map(p => p.nome).sort();
+    fillSelect('add-gk-cinza', names);
+    fillSelect('add-gk-branco', names);
+    fillSelect('add-line-cinza', names, true);
+    fillSelect('add-line-branco', names, true);
+}
+
+function rebuildRemovePlayerOptions() {
+    const select = document.getElementById('remove-player-select');
+    if (!select) return;
+    select.innerHTML = playersAdmin
+        .map(p => `<option value="${p.id}">${p.nome}</option>`)
+        .join('');
+}
+
+function fillSelect(id, options, multiple = false) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = playerOptionsAdmin.map(p => `<option value="${p}">${p}</option>`).join('');
+    el.innerHTML = options.map(p => `<option value="${p}">${p}</option>`).join('');
     if (multiple) el.setAttribute('multiple', 'multiple');
 }
 
-function initFormAdmin() {
+function initAddGameForm() {
     const form = document.getElementById('add-game-form');
     if (!form) return;
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const statusEl = document.getElementById('add-game-status');
+        if (statusEl) statusEl.textContent = '';
         const dateVal = document.getElementById('add-date').value;
         const scoreC = parseInt(document.getElementById('add-score-cinza').value, 10) || 0;
         const scoreB = parseInt(document.getElementById('add-score-branco').value, 10) || 0;
@@ -88,32 +113,169 @@ function initFormAdmin() {
         const lineB = Array.from(document.getElementById('add-line-branco').selectedOptions).map(o => o.value);
 
         if (!dateVal || lineC.length === 0 || lineB.length === 0) {
-            statusEl.textContent = 'Preencha data e selecione pelo menos um jogador em cada linha.';
+            if (statusEl) statusEl.textContent = 'Preencha data e selecione pelo menos um jogador em cada linha.';
             return;
         }
 
         const [yyyy, mm, dd] = dateVal.split('-');
         const dataFmt = `${dd}/${mm}/${yyyy}`;
-        const nextId = Math.max(...gamesAdmin.map(g => g.id), 0) + 1;
-
         const newGame = {
-            id: nextId,
             data: dataFmt,
             cinza: { goleiro: gkC, linha: lineC },
             branco: { goleiro: gkB, linha: lineB },
             placar: { cinza: scoreC, branco: scoreB }
         };
 
-        gamesAdmin.push(newGame);
-        rebuildPlayerOptionsAdmin(gamesAdmin);
-        renderPreview(newGame);
-        statusEl.textContent = `Jogo ${nextId} criado (não persiste no arquivo). Copie o JSON abaixo para salvar.`;
+        const { error } = await supabase.from('games').insert(newGame);
+        if (error) {
+            if (statusEl) statusEl.textContent = 'Erro ao salvar jogo.';
+            console.error(error);
+            return;
+        }
+        await loadAdminData();
+        await recomputeRatingsAndUpdate();
+        if (statusEl) statusEl.textContent = 'Jogo salvo e ratings atualizados.';
         form.reset();
     });
 }
 
-function renderPreview(game) {
-    const previewEl = document.getElementById('json-preview');
-    if (!previewEl) return;
-    previewEl.textContent = JSON.stringify(game, null, 2);
+function calculateInitialRating(phys, tech, tactic) {
+    const weighted = (tech * 0.45) + (phys * 0.35) + (tactic * 0.20);
+    return Math.max(0, Math.min(10, (weighted / 5) * 10));
+}
+
+function initAddPlayerForm() {
+    const form = document.getElementById('add-player-form');
+    if (!form) return;
+
+    const nameInput = document.getElementById('add-player-name');
+    const primarySelect = document.getElementById('add-player-pos-primary');
+    const secondarySelect = document.getElementById('add-player-pos-secondary');
+    const gkInput = document.getElementById('add-player-gk');
+    const physSelect = document.getElementById('add-player-phys');
+    const techSelect = document.getElementById('add-player-tech');
+    const tacticSelect = document.getElementById('add-player-tactic');
+    const ratingPreview = document.getElementById('add-player-rating-preview');
+    const statusEl = document.getElementById('add-player-status');
+
+    const updatePreview = () => {
+        const phys = parseInt(physSelect.value, 10) || 1;
+        const tech = parseInt(techSelect.value, 10) || 1;
+        const tactic = parseInt(tacticSelect.value, 10) || 1;
+        const rating = calculateInitialRating(phys, tech, tactic);
+        ratingPreview.textContent = rating.toFixed(1);
+    };
+    [physSelect, techSelect, tacticSelect].forEach(select => {
+        select.addEventListener('change', updatePreview);
+    });
+    updatePreview();
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (statusEl) statusEl.textContent = '';
+        const rawName = nameInput.value.trim();
+        if (!rawName) {
+            if (statusEl) statusEl.textContent = 'Informe o nome do atleta.';
+            return;
+        }
+        if (playersAdmin.some(p => p.nome.toLowerCase() === rawName.toLowerCase())) {
+            if (statusEl) statusEl.textContent = 'Esse atleta ja existe.';
+            return;
+        }
+
+        const primary = primarySelect.value;
+        const secondary = Array.from(secondarySelect.selectedOptions).map(o => o.value).filter(Boolean);
+        const secondaryFiltered = secondary.filter(pos => pos !== primary);
+        const phys = parseInt(physSelect.value, 10) || 1;
+        const tech = parseInt(techSelect.value, 10) || 1;
+        const tactic = parseInt(tacticSelect.value, 10) || 1;
+        const rating = parseFloat(calculateInitialRating(phys, tech, tactic).toFixed(1));
+
+        const profile = {
+            nome: rawName,
+            posicao: [primary, ...secondaryFiltered],
+            posicao_secundaria: secondaryFiltered,
+            goleiro: Boolean(gkInput.checked),
+            rating_linha: rating,
+            rating_gk: null
+        };
+
+        const { error } = await supabase.from('players').insert(profile);
+        if (error) {
+            if (statusEl) statusEl.textContent = 'Erro ao salvar atleta.';
+            console.error(error);
+            return;
+        }
+        await loadAdminData();
+        if (statusEl) statusEl.textContent = `Atleta ${rawName} adicionado.`;
+        nameInput.value = '';
+        gkInput.checked = false;
+        secondarySelect.querySelectorAll('option').forEach(opt => { opt.selected = false; });
+        updatePreview();
+    });
+}
+
+function initRemovePlayer() {
+    const btn = document.getElementById('remove-player-btn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        const statusEl = document.getElementById('remove-player-status');
+        if (statusEl) statusEl.textContent = '';
+        const select = document.getElementById('remove-player-select');
+        const id = select?.value;
+        if (!id) return;
+        const { error } = await supabase.from('players').delete().eq('id', id);
+        if (error) {
+            if (statusEl) statusEl.textContent = 'Erro ao remover atleta.';
+            console.error(error);
+            return;
+        }
+        await loadAdminData();
+        if (statusEl) statusEl.textContent = 'Atleta removido.';
+    });
+}
+
+async function recomputeRatingsAndUpdate() {
+    const { data: games, error: gamesError } = await supabase.from('games').select('*').order('id', { ascending: true });
+    const { data: players, error: playersError } = await supabase.from('players').select('*');
+    if (gamesError || playersError) return;
+    const lineResults = {};
+
+    (games || []).forEach(game => {
+        const golsC = game.placar?.cinza ?? 0;
+        const golsB = game.placar?.branco ?? 0;
+        let resCinza, resBranco;
+        if (golsC > golsB) { resCinza = 3; resBranco = 0; }
+        else if (golsB > golsC) { resCinza = 0; resBranco = 3; }
+        else { resCinza = 1; resBranco = 1; }
+
+        const addLine = (name, points) => {
+            if (!lineResults[name]) lineResults[name] = [];
+            lineResults[name].push(points);
+        };
+        (game.cinza?.linha || []).forEach(n => addLine(n, resCinza));
+        (game.branco?.linha || []).forEach(n => addLine(n, resBranco));
+    });
+
+    const updates = [];
+    (players || []).forEach(player => {
+        const results = lineResults[player.nome] || [];
+        if (results.length === 0) return;
+        const startWeighted = Math.max(0, results.length - 10);
+        let weightedPoints = 0;
+        let weightedMatches = 0;
+        results.forEach((points, idx) => {
+            const weight = idx >= startWeighted ? 1.2 : 1.0;
+            weightedPoints += points * weight;
+            weightedMatches += weight;
+        });
+        if (weightedMatches === 0) return;
+        const ppg = weightedPoints / weightedMatches;
+        const rating = Math.min(10, (ppg / 3) * 10);
+        updates.push({ id: player.id, rating_linha: parseFloat(rating.toFixed(1)) });
+    });
+
+    for (const update of updates) {
+        await supabase.from('players').update({ rating_linha: update.rating_linha }).eq('id', update.id);
+    }
 }
