@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(([games, profiles]) => {
             originalGames = games;
             setPlayerProfiles(profiles);
-            rebuildPlayerOptions(originalGames);
             rebuildPlayerStats(originalGames);
+            rebuildPlayerOptions(originalGames);
             initDateFilter();
             initAddGameForm();
             applyFilter();
@@ -262,8 +262,8 @@ function initAddGameForm() {
         };
 
         originalGames.push(newGame);
-        rebuildPlayerOptions(originalGames);
         rebuildPlayerStats(originalGames);
+        rebuildPlayerOptions(originalGames);
         initDateFilter();
         applyFilter();
         statusEl.textContent = `Jogo ${nextId} adicionado (somente nesta sessão).`;
