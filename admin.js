@@ -52,6 +52,7 @@ function unlock() {
     if (content) content.classList.remove('hidden');
     initLogout();
     initRecomputeRatings();
+    initAdminActions();
     loadAdminData();
     initAddGameForm();
     initAddPlayerForm();
@@ -66,6 +67,27 @@ function initLogout() {
         await supabaseClient.auth.signOut();
         window.location.reload();
     });
+}
+
+function initAdminActions() {
+    const buttons = Array.from(document.querySelectorAll('.admin-action-btn'));
+    const sections = Array.from(document.querySelectorAll('.admin-section'));
+    if (buttons.length === 0 || sections.length === 0) return;
+
+    const showSection = (id) => {
+        sections.forEach(section => {
+            section.classList.toggle('hidden', section.id !== id);
+        });
+        buttons.forEach(btn => {
+            btn.classList.toggle('admin-action-btn--active', btn.dataset.adminSection === id);
+        });
+    };
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => showSection(btn.dataset.adminSection));
+    });
+
+    showSection(buttons[0].dataset.adminSection);
 }
 
 function initRecomputeRatings() {
