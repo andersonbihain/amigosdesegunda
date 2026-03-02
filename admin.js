@@ -1,9 +1,33 @@
 const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
 
 let gamesAdmin = [];
 let playersAdmin = [];
+
+async function getDefaultFilterStartDateSetting() {
+    const { data, error } = await supabaseClient
+        .from('app_settings')
+        .select('value')
+        .eq('key', DEFAULT_FILTER_START_SETTING_KEY)
+        .maybeSingle();
+    if (error) throw error;
+    return data && /^\d{4}-\d{2}-\d{2}$/.test(data.value) ? data.value : '';
+}
+
+async function setDefaultFilterStartDateSetting(value) {
+    if (!value) {
+        const { error } = await supabaseClient.from('app_settings').delete().eq('key', DEFAULT_FILTER_START_SETTING_KEY);
+        if (error) throw error;
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('app_settings')
+        .upsert({ key: DEFAULT_FILTER_START_SETTING_KEY, value }, { onConflict: 'key' });
+    if (error) throw error;
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     initAdminAuth();
@@ -58,6 +82,7 @@ function unlock() {
     initAddPlayerForm();
     initEditPlayerForm();
     initRemovePlayer();
+    initDefaultFilterSettings();
 }
 
 function initLogout() {
@@ -100,6 +125,60 @@ function initRecomputeRatings() {
         await loadAdminData();
         if (statusEl) statusEl.textContent = 'Ratings atualizados.';
     });
+}
+
+function initDefaultFilterSettings() {
+    const form = document.getElementById('default-filter-form');
+    const input = document.getElementById('default-filter-start-date');
+    const clearBtn = document.getElementById('default-filter-clear');
+    const currentEl = document.getElementById('default-filter-current');
+    const statusEl = document.getElementById('default-filter-status');
+    if (!form || !input || !currentEl || !statusEl) return;
+
+    const refreshView = async () => {
+        const stored = await getDefaultFilterStartDateSetting();
+        input.value = stored;
+        currentEl.textContent = stored
+            ? `Filtro inicial atual: ${stored.split('-').reverse().join('/')}`
+            : 'Filtro inicial atual: historico completo';
+    };
+
+    refreshView().catch((err) => {
+        console.error('Erro ao carregar filtro padrao:', err);
+        statusEl.textContent = 'Nao foi possivel carregar o filtro padrao.';
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusEl.textContent = '';
+        const value = input.value;
+        if (!value) {
+            statusEl.textContent = 'Escolha uma data ou use limpar.';
+            return;
+        }
+        try {
+            await setDefaultFilterStartDateSetting(value);
+            statusEl.textContent = 'Filtro inicial salvo. O dashboard usara essa data ao abrir.';
+            await refreshView();
+        } catch (err) {
+            console.error('Erro ao salvar filtro padrao:', err);
+            statusEl.textContent = 'Nao foi possivel salvar o filtro inicial.';
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', async () => {
+            statusEl.textContent = '';
+            try {
+                await setDefaultFilterStartDateSetting('');
+                statusEl.textContent = 'Filtro inicial removido. O dashboard volta a abrir com todo o historico.';
+                await refreshView();
+            } catch (err) {
+                console.error('Erro ao limpar filtro padrao:', err);
+                statusEl.textContent = 'Nao foi possivel limpar o filtro inicial.';
+            }
+        });
+    }
 }
 
 async function maybeAutoRecomputeRatings() {

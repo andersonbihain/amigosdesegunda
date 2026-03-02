@@ -33,11 +33,36 @@ const NAME_MAPPING = {
 const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
 
 function standardize(name) {
     if (!name) return 'Desconhecido';
     const lower = name.toString().trim().toLowerCase();
     return NAME_MAPPING[lower] || name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function parseBrDateToTime(value) {
+    if (!value || typeof value !== 'string') return Number.NaN;
+    const parts = value.split('/');
+    if (parts.length !== 3) return Number.NaN;
+    const [dd, mm, yyyy] = parts.map(Number);
+    return Date.UTC(yyyy, mm - 1, dd);
+}
+
+function parseIsoDateToTime(value) {
+    if (!value || typeof value !== 'string') return Number.NaN;
+    const parts = value.split('-');
+    if (parts.length !== 3) return Number.NaN;
+    const [yyyy, mm, dd] = parts.map(Number);
+    return Date.UTC(yyyy, mm - 1, dd);
+}
+
+function getDefaultStartIndex(values) {
+    const targetTime = parseIsoDateToTime(defaultFilterStartDate);
+    if (!Number.isFinite(targetTime)) return 0;
+    const idx = values.findIndex(value => parseBrDateToTime(value) >= targetTime);
+    if (idx >= 0) return idx;
+    return Math.max(values.length - 1, 0);
 }
 
 // --- ESTADO GLOBAL ---
@@ -48,6 +73,7 @@ let playerProfiles = [];
 let playerProfileMap = {};
 let playerStats = {};
 let gkGlobalAvg = 0;
+let defaultFilterStartDate = '';
 const TEAM_PICKER_EXCLUDE = new Set([
     'Leonel',
     'Anderson G',
@@ -84,13 +110,20 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadFromSupabase() {
     try {
         if (!supabaseClient) throw new Error('Supabase nao carregou.');
-        const [{ data: games, error: gamesError }, { data: profiles, error: profilesError }] = await Promise.all([
+        const [{ data: games, error: gamesError }, { data: profiles, error: profilesError }, { data: setting, error: settingError }] = await Promise.all([
             supabaseClient.from('games').select('*').order('id', { ascending: true }),
-            supabaseClient.from('players').select('*').order('nome', { ascending: true })
+            supabaseClient.from('players').select('*').order('nome', { ascending: true }),
+            supabaseClient.from('app_settings').select('value').eq('key', DEFAULT_FILTER_START_SETTING_KEY).maybeSingle()
         ]);
         if (gamesError) throw gamesError;
         if (profilesError) throw profilesError;
         originalGames = Array.isArray(games) ? games : [];
+        if (settingError) {
+            console.warn('Configuracao global do filtro indisponivel:', settingError);
+            defaultFilterStartDate = '';
+        } else {
+            defaultFilterStartDate = setting && /^\d{4}-\d{2}-\d{2}$/.test(setting.value) ? setting.value : '';
+        }
         setPlayerProfiles(profiles || []);
         rebuildPlayerStats(originalGames);
         rebuildPlayerOptions(originalGames);
@@ -118,7 +151,8 @@ function initDateFilter() {
     const endLabel = document.getElementById('filter-end-label');
 
     const maxIdx = Math.max(dateValues.length - 1, 0);
-    startRange.min = 0; startRange.max = maxIdx; startRange.value = 0;
+    const defaultStartIdx = getDefaultStartIndex(dateValues);
+    startRange.min = 0; startRange.max = maxIdx; startRange.value = defaultStartIdx;
     endRange.min = 0; endRange.max = maxIdx; endRange.value = maxIdx;
 
     const updateLabels = () => {
