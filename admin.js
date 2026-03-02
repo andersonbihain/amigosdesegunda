@@ -9,7 +9,7 @@ let playersAdmin = [];
 async function getDefaultFilterStartDateSetting() {
     const { data, error } = await supabaseClient
         .from('app_settings')
-        .select('value')
+        .select('key, value')
         .eq('key', DEFAULT_FILTER_START_SETTING_KEY)
         .maybeSingle();
     if (error) throw error;
@@ -23,9 +23,25 @@ async function setDefaultFilterStartDateSetting(value) {
         return;
     }
 
+    const { data: existing, error: existingError } = await supabaseClient
+        .from('app_settings')
+        .select('key')
+        .eq('key', DEFAULT_FILTER_START_SETTING_KEY)
+        .maybeSingle();
+    if (existingError) throw existingError;
+
+    if (existing) {
+        const { error } = await supabaseClient
+            .from('app_settings')
+            .update({ value, updated_at: new Date().toISOString() })
+            .eq('key', DEFAULT_FILTER_START_SETTING_KEY);
+        if (error) throw error;
+        return;
+    }
+
     const { error } = await supabaseClient
         .from('app_settings')
-        .upsert({ key: DEFAULT_FILTER_START_SETTING_KEY, value }, { onConflict: 'key' });
+        .insert({ key: DEFAULT_FILTER_START_SETTING_KEY, value });
     if (error) throw error;
 }
 
@@ -158,11 +174,11 @@ function initDefaultFilterSettings() {
         }
         try {
             await setDefaultFilterStartDateSetting(value);
-            statusEl.textContent = 'Filtro inicial salvo. O dashboard usara essa data ao abrir.';
+            statusEl.textContent = 'Filtro inicial salvo. Recarregue o dashboard se ele ja estiver aberto.';
             await refreshView();
         } catch (err) {
             console.error('Erro ao salvar filtro padrao:', err);
-            statusEl.textContent = 'Nao foi possivel salvar o filtro inicial.';
+            statusEl.textContent = `Nao foi possivel salvar o filtro inicial. ${err.message || ''}`.trim();
         }
     });
 
@@ -171,11 +187,11 @@ function initDefaultFilterSettings() {
             statusEl.textContent = '';
             try {
                 await setDefaultFilterStartDateSetting('');
-                statusEl.textContent = 'Filtro inicial removido. O dashboard volta a abrir com todo o historico.';
+                statusEl.textContent = 'Filtro inicial removido. Recarregue o dashboard se ele ja estiver aberto.';
                 await refreshView();
             } catch (err) {
                 console.error('Erro ao limpar filtro padrao:', err);
-                statusEl.textContent = 'Nao foi possivel limpar o filtro inicial.';
+                statusEl.textContent = `Nao foi possivel limpar o filtro inicial. ${err.message || ''}`.trim();
             }
         });
     }
