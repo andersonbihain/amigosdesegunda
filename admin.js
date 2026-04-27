@@ -3,6 +3,7 @@ const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
 const TEAM_DRAW_STORAGE_KEY = 'futstats_last_team_draw';
+const TEAM_DRAW_SETTING_KEY = 'latest_team_draw';
 
 let gamesAdmin = [];
 let playersAdmin = [];
@@ -91,6 +92,7 @@ function unlock() {
     const content = document.getElementById('admin-content');
     if (lock) lock.classList.add('hidden');
     if (content) content.classList.remove('hidden');
+    importTeamDrawFromUrl();
     initLogout();
     initRecomputeRatings();
     initAdminActions();
@@ -104,6 +106,27 @@ function unlock() {
     initExportData();
     initDefaultFilterSettings();
     initStoredTeamDraw();
+}
+
+function decodeTeamDrawFromUrl(value) {
+    try {
+        return JSON.parse(decodeURIComponent(escape(atob(value))));
+    } catch (err) {
+        console.warn('Link de sorteio invalido:', err);
+        return null;
+    }
+}
+
+function importTeamDrawFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('draw');
+    if (!encoded) return;
+    const draw = decodeTeamDrawFromUrl(encoded);
+    if (!draw?.cinza?.goleiro || !draw?.branco?.goleiro) return;
+    localStorage.setItem(TEAM_DRAW_STORAGE_KEY, JSON.stringify(draw));
+    params.delete('draw');
+    const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', cleanUrl);
 }
 
 function initLogout() {
@@ -639,6 +662,25 @@ function getStoredTeamDraw() {
     }
 }
 
+async function getCloudTeamDraw() {
+    try {
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient
+            .from('app_settings')
+            .select('value')
+            .eq('key', TEAM_DRAW_SETTING_KEY)
+            .maybeSingle();
+        if (error || !data?.value) return null;
+        const draw = JSON.parse(data.value);
+        if (!draw?.cinza?.goleiro || !draw?.branco?.goleiro) return null;
+        localStorage.setItem(TEAM_DRAW_STORAGE_KEY, JSON.stringify(draw));
+        return draw;
+    } catch (err) {
+        console.warn('Nao foi possivel carregar sorteio da nuvem:', err);
+        return null;
+    }
+}
+
 function formatStoredDrawTime(value) {
     if (!value) return 'data desconhecida';
     const date = new Date(value);
@@ -646,11 +688,11 @@ function formatStoredDrawTime(value) {
     return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-function renderStoredTeamDrawPanel() {
+async function renderStoredTeamDrawPanel() {
     const panel = document.getElementById('stored-team-draw');
     const summary = document.getElementById('stored-team-draw-summary');
     if (!panel || !summary) return;
-    const draw = getStoredTeamDraw();
+    const draw = getStoredTeamDraw() || await getCloudTeamDraw();
     panel.classList.toggle('hidden', !draw);
     if (!draw) {
         summary.textContent = '';
@@ -665,8 +707,8 @@ function selectValue(id, value) {
     select.value = value || '';
 }
 
-function applyStoredTeamDrawToAddForm() {
-    const draw = getStoredTeamDraw();
+async function applyStoredTeamDrawToAddForm() {
+    const draw = getStoredTeamDraw() || await getCloudTeamDraw();
     const statusEl = document.getElementById('add-game-status');
     if (!draw) {
         if (statusEl) statusEl.textContent = 'Nenhum sorteio salvo para carregar.';
@@ -682,6 +724,11 @@ function applyStoredTeamDrawToAddForm() {
 
 function clearStoredTeamDraw() {
     localStorage.removeItem(TEAM_DRAW_STORAGE_KEY);
+    if (supabaseClient) {
+        supabaseClient.from('app_settings').delete().eq('key', TEAM_DRAW_SETTING_KEY).then(({ error }) => {
+            if (error) console.warn('Nao foi possivel remover sorteio da nuvem:', error);
+        });
+    }
     renderStoredTeamDrawPanel();
 }
 

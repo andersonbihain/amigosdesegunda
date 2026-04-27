@@ -35,6 +35,7 @@ const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
 const TEAM_DRAW_STORAGE_KEY = 'futstats_last_team_draw';
+const TEAM_DRAW_SETTING_KEY = 'latest_team_draw';
 
 function standardize(name) {
     if (!name) return 'Desconhecido';
@@ -137,9 +138,9 @@ const TEAM_PICKER_EXCLUDE = new Set([
 const teamPickerState = { cinza: [], branco: [], gkCinza: '', gkBranco: '' };
 const teamPickerSelection = { cinza: null, branco: null };
 
-function saveCurrentTeamDraw() {
+function getCurrentTeamDrawPayload() {
     if (teamPickerState.cinza.length === 0 || teamPickerState.branco.length === 0) return false;
-    const payload = {
+    return {
         savedAt: new Date().toISOString(),
         cinza: {
             goleiro: teamPickerState.gkCinza,
@@ -150,7 +151,40 @@ function saveCurrentTeamDraw() {
             linha: [...teamPickerState.branco]
         }
     };
+}
+
+function encodeTeamDrawForUrl(payload) {
+    return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function getTeamDrawAdminUrl(payload) {
+    const url = new URL('admin.html', window.location.href);
+    url.searchParams.set('draw', encodeTeamDrawForUrl(payload));
+    return url.toString();
+}
+
+async function saveCurrentTeamDraw() {
+    const payload = getCurrentTeamDrawPayload();
+    if (!payload) return false;
     localStorage.setItem(TEAM_DRAW_STORAGE_KEY, JSON.stringify(payload));
+    try {
+        if (supabaseClient) {
+            const value = JSON.stringify(payload);
+            const { data: existing, error: existingError } = await supabaseClient
+                .from('app_settings')
+                .select('key')
+                .eq('key', TEAM_DRAW_SETTING_KEY)
+                .maybeSingle();
+            if (existingError) throw existingError;
+            const request = existing
+                ? supabaseClient.from('app_settings').update({ value, updated_at: new Date().toISOString() }).eq('key', TEAM_DRAW_SETTING_KEY)
+                : supabaseClient.from('app_settings').insert({ key: TEAM_DRAW_SETTING_KEY, value });
+            const { error } = await request;
+            if (error) throw error;
+        }
+    } catch (err) {
+        console.warn('Nao foi possivel salvar o sorteio na nuvem:', err);
+    }
     return true;
 }
 
@@ -611,6 +645,8 @@ function renderTeamPickerResults() {
 }
 
 function buildWhatsAppMessage() {
+    const drawPayload = getCurrentTeamDrawPayload();
+    const adminUrl = drawPayload ? getTeamDrawAdminUrl(drawPayload) : '';
     const formatPlayer = (name, number, isGk = false) => {
         const badge = getPositionBadgeInfo(name, isGk);
         const suffix = badge ? ` (${badge.code})` : '';
@@ -632,7 +668,10 @@ function buildWhatsAppMessage() {
         ...cinzaList,
         '',
         `Time Branco: ${'\u{1F3F3}\u{FE0F}'.repeat(4)}`,
-        ...brancoList
+        ...brancoList,
+        '',
+        'Cadastrar placar depois:',
+        adminUrl
     ].join('\n');
 }
 
@@ -1212,9 +1251,9 @@ function initTeamPicker() {
     }
 
     if (whatsappBtn) {
-        whatsappBtn.addEventListener('click', () => {
+        whatsappBtn.addEventListener('click', async () => {
             if (teamPickerState.cinza.length === 0 || teamPickerState.branco.length === 0) return;
-            saveCurrentTeamDraw();
+            await saveCurrentTeamDraw();
             const message = buildWhatsAppMessage();
             const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank', 'noopener');
