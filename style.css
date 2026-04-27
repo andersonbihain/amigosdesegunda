@@ -222,6 +222,37 @@ tr {
     border-color: #60a5fa;
     box-shadow: inset 0 0 0 1px #60a5fa;
 }
+.admin-rating-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.admin-rating-badge--high {
+    color: #166534;
+    background: #dcfce7;
+    border-color: #86efac;
+}
+.admin-rating-badge--mid {
+    color: #92400e;
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+.admin-rating-badge--low {
+    color: #991b1b;
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+.admin-rating-badge--empty {
+    color: #64748b;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
 
 /* Slider duplo em uma barra */
 .range-dual {

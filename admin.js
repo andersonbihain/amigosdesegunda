@@ -98,6 +98,7 @@ function unlock() {
     initAddPlayerForm();
     initEditPlayerForm();
     initRemovePlayer();
+    initRatingsViewer();
     initDefaultFilterSettings();
 }
 
@@ -220,7 +221,73 @@ async function loadAdminData() {
     rebuildPlayerOptionsAdmin();
     rebuildRemovePlayerOptions();
     rebuildEditPlayerOptions();
+    renderRatingsViewer();
     maybeAutoRecomputeRatings();
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function formatRatingValue(value) {
+    return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(1) : '-';
+}
+
+function getRatingBadgeClass(value) {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 'admin-rating-badge admin-rating-badge--empty';
+    if (value >= 7) return 'admin-rating-badge admin-rating-badge--high';
+    if (value >= 4) return 'admin-rating-badge admin-rating-badge--mid';
+    return 'admin-rating-badge admin-rating-badge--low';
+}
+
+function formatPlayerPositions(player) {
+    const positions = Array.isArray(player.posicao) && player.posicao.length > 0
+        ? player.posicao
+        : [];
+    return positions.length > 0 ? positions.join(', ') : '-';
+}
+
+function initRatingsViewer() {
+    const searchInput = document.getElementById('ratings-search');
+    if (!searchInput) return;
+    searchInput.addEventListener('input', renderRatingsViewer);
+}
+
+function renderRatingsViewer() {
+    const tbody = document.getElementById('ratings-table-body');
+    const summary = document.getElementById('ratings-summary');
+    const empty = document.getElementById('ratings-empty');
+    const searchInput = document.getElementById('ratings-search');
+    if (!tbody || !summary || !empty) return;
+
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    const filtered = [...playersAdmin]
+        .filter(player => !query || String(player.nome || '').toLowerCase().includes(query))
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+
+    const withLineRating = playersAdmin.filter(player => typeof player.rating_linha === 'number').length;
+    const withGkRating = playersAdmin.filter(player => typeof player.rating_gk === 'number').length;
+    summary.textContent = `${playersAdmin.length} atletas cadastrados. ${withLineRating} com rating de linha e ${withGkRating} com rating de goleiro.`;
+    empty.classList.toggle('hidden', filtered.length > 0);
+
+    tbody.innerHTML = filtered.map(player => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-3 py-2 font-semibold text-slate-800">${escapeHtml(player.nome)}</td>
+            <td class="px-3 py-2">
+                <span class="${getRatingBadgeClass(player.rating_linha)}">${formatRatingValue(player.rating_linha)}</span>
+            </td>
+            <td class="px-3 py-2">
+                <span class="${getRatingBadgeClass(player.rating_gk)}">${formatRatingValue(player.rating_gk)}</span>
+            </td>
+            <td class="px-3 py-2 text-slate-600">${escapeHtml(formatPlayerPositions(player))}</td>
+            <td class="px-3 py-2 text-slate-600">${player.goleiro ? 'Linha e goleiro' : 'Linha'}</td>
+        </tr>
+    `).join('');
 }
 
 function rebuildPlayerOptionsAdmin() {
