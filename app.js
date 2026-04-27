@@ -1386,7 +1386,7 @@ function processData(games) {
     // Goleiros
     const gkArr = playersArr.filter(p => p.gkMatches > 0).sort((a,b) => (a.gkGoals/a.gkMatches) - (b.gkGoals/b.gkMatches));
     document.getElementById('gk-body').innerHTML = gkArr.map(p => {
-        const media = p.gkMatches >= 5 ? (p.gkGoals / p.gkMatches).toFixed(2) : '-';
+        const media = (p.gkGoals / p.gkMatches).toFixed(2);
         return `
         <tr class="hover:bg-slate-50">
             <td class="px-4 py-2 font-medium">${p.name}</td>
