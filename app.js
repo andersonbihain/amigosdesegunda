@@ -1500,8 +1500,8 @@ function getInactivePlayers(months = 2) {
     const lastByName = {};
     [...originalGames].sort((a, b) => a.id - b.id).forEach(game => {
         getGamePlayerNames(game).forEach(name => {
+            if (!names.has(name)) return;
             lastByName[name] = game.data;
-            names.add(name);
         });
     });
 
