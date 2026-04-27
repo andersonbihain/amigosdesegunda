@@ -92,6 +92,10 @@ function formatPct(value) {
     return `${value.toFixed(1)}%`;
 }
 
+function getRecordText(wins, draws, losses) {
+    return `${wins}V / ${draws}E / ${losses}D`;
+}
+
 // --- ESTADO GLOBAL ---
 let originalGames = [];
 let dateValues = [];
@@ -560,12 +564,15 @@ function renderTeamPickerResults() {
     `;
 
     results.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
-            ${renderPitch('cinza', 'Time Cinza', teamPickerState.gkCinza, teamPickerState.cinza)}
-            <div class="flex justify-center">
-                <button id="team-picker-swap" type="button" class="bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-800">&harr;</button>
+        <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                ${renderPitch('cinza', 'Time Cinza', teamPickerState.gkCinza, teamPickerState.cinza)}
+                <div class="flex justify-center">
+                    <button id="team-picker-swap" type="button" class="bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded hover:bg-slate-800">&harr;</button>
+                </div>
+                ${renderPitch('branco', 'Time Branco', teamPickerState.gkBranco, teamPickerState.branco)}
             </div>
-            ${renderPitch('branco', 'Time Branco', teamPickerState.gkBranco, teamPickerState.branco)}
+            ${renderTeamBalanceAnalysis()}
         </div>
     `;
 }
@@ -652,6 +659,16 @@ function getLineRating(name) {
     return Math.min(10, (ppg / 3) * 10);
 }
 
+function getGoalkeeperRating(name) {
+    const profile = playerProfileMap[name];
+    if (profile && typeof profile.rating_gk === 'number') {
+        return profile.rating_gk;
+    }
+    const stats = playerStats[name];
+    if (!stats || stats.gkMatches === 0) return null;
+    return Math.max(0, Math.min(10, 10 - (stats.gkGoals / stats.gkMatches)));
+}
+
 function formatLineRating(name) {
     const rating = getLineRating(name);
     return Number.isFinite(rating) ? rating.toFixed(1) : '0.0';
@@ -664,6 +681,87 @@ function getRatingStyle(name) {
     const border = `hsl(${hue}, 70%, 45%)`;
     const text = `hsl(${hue}, 60%, 25%)`;
     return `background:${bg};border-color:${border};color:${text};`;
+}
+
+function getTeamPositionCounts(players) {
+    return players.reduce((acc, name) => {
+        const pos = getPrimaryPosition(name);
+        acc[pos] = (acc[pos] || 0) + 1;
+        return acc;
+    }, { defesa: 0, meio: 0, ataque: 0 });
+}
+
+function getTeamLineAverage(players) {
+    if (players.length === 0) return 0;
+    return players.reduce((sum, name) => sum + getLineRating(name), 0) / players.length;
+}
+
+function renderTeamAnalysisItem(label, players, gkName) {
+    const counts = getTeamPositionCounts(players);
+    const avg = getTeamLineAverage(players);
+    const gkRatingValue = getGoalkeeperRating(gkName);
+    const gkRating = gkRatingValue === null ? '-' : gkRatingValue.toFixed(1);
+    return `
+        <div class="bg-white border border-slate-200 rounded-lg p-3">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-xs uppercase text-slate-500 font-semibold">${escapeHtml(label)}</p>
+                    <p class="text-lg font-bold text-slate-800 mt-1">${avg.toFixed(1)}</p>
+                    <p class="text-xs text-slate-500">Rating médio de linha</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-slate-500">Goleiro</p>
+                    <p class="text-sm font-semibold text-slate-800">${escapeHtml(gkName || '-')}</p>
+                    <p class="text-xs text-slate-500">GK ${gkRating}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 mt-3 text-center text-xs">
+                <div class="bg-blue-50 text-blue-800 rounded px-2 py-1">DF ${counts.defesa || 0}</div>
+                <div class="bg-emerald-50 text-emerald-800 rounded px-2 py-1">MC ${counts.meio || 0}</div>
+                <div class="bg-red-50 text-red-800 rounded px-2 py-1">AT ${counts.ataque || 0}</div>
+            </div>
+        </div>
+    `;
+}
+
+function getTeamBalanceAlerts() {
+    const avgCinza = getTeamLineAverage(teamPickerState.cinza);
+    const avgBranco = getTeamLineAverage(teamPickerState.branco);
+    const diff = Math.abs(avgCinza - avgBranco);
+    const countsCinza = getTeamPositionCounts(teamPickerState.cinza);
+    const countsBranco = getTeamPositionCounts(teamPickerState.branco);
+    const alerts = [];
+
+    if (diff >= 1.0) alerts.push(`Diferença de rating alta: ${diff.toFixed(1)} ponto.`);
+    else if (diff >= 0.5) alerts.push(`Diferença moderada de rating: ${diff.toFixed(1)} ponto.`);
+    else alerts.push(`Times bem equilibrados no rating: diferença ${diff.toFixed(1)}.`);
+
+    [['Time Cinza', countsCinza], ['Time Branco', countsBranco]].forEach(([label, counts]) => {
+        if ((counts.defesa || 0) === 0) alerts.push(`${label} está sem defensor.`);
+        if ((counts.meio || 0) === 0) alerts.push(`${label} está sem jogador de meio.`);
+        if ((counts.ataque || 0) === 0) alerts.push(`${label} está sem atacante.`);
+    });
+
+    return alerts;
+}
+
+function renderTeamBalanceAnalysis() {
+    const alerts = getTeamBalanceAlerts();
+    return `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+            <div class="flex flex-col gap-1 mb-3">
+                <p class="text-sm font-bold text-slate-800">Análise do próximo jogo</p>
+                <p class="text-xs text-slate-500">Força média, distribuição de posições e alertas de equilíbrio.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${renderTeamAnalysisItem('Time Cinza', teamPickerState.cinza, teamPickerState.gkCinza)}
+                ${renderTeamAnalysisItem('Time Branco', teamPickerState.branco, teamPickerState.gkBranco)}
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+                ${alerts.map(alert => `<span class="text-xs bg-white border border-slate-200 rounded-full px-3 py-1 text-slate-700">${escapeHtml(alert)}</span>`).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function buildPositionGroups(linePool) {
@@ -1374,6 +1472,31 @@ function getLineRanking(playersArr) {
         .sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches) || compareByName(a, b));
 }
 
+function getPlayerCurrentFormText(player) {
+    if (player.currentWin > 1) return `${player.currentWin} vitórias seguidas`;
+    if (player.currentWin === 1) return 'Venceu o último jogo';
+    if (player.currentNoWin > 1) return `Sem vencer há ${player.currentNoWin} jogos`;
+    if (player.currentUnbeaten > 1) return `Invicto há ${player.currentUnbeaten} jogos`;
+    return 'Forma recente neutra';
+}
+
+function renderRecentForm(results) {
+    const last = results.slice(-5);
+    if (last.length === 0) return '';
+    const dots = last.map(r => {
+        const color = r === 'V' ? 'bg-green-500' : (r === 'E' ? 'bg-slate-400' : 'bg-red-500');
+        return `<span class="inline-block h-2.5 w-2.5 rounded-full ${color}"></span>`;
+    }).join('');
+    const text = last.join(' ');
+    const detail = last.map(getResultLabel).join(', ');
+    return `
+        <div class="flex flex-col gap-1" title="Últimos ${last.length}: ${escapeHtml(detail)}">
+            <div class="flex items-center gap-1">${dots}</div>
+            <span class="text-[11px] text-slate-500">${escapeHtml(text)}</span>
+        </div>
+    `;
+}
+
 function initPlayerModal() {
     const modal = document.getElementById('player-modal');
     const overlay = document.getElementById('player-modal-overlay');
@@ -1400,6 +1523,33 @@ function renderModalKpi(label, value) {
     `;
 }
 
+function renderPerformanceBar(label, value, detail, colorClass = 'bg-blue-600') {
+    const safeValue = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+    return `
+        <div>
+            <div class="flex items-center justify-between gap-3 mb-1">
+                <span class="text-xs font-semibold text-slate-600">${escapeHtml(label)}</span>
+                <span class="text-xs font-bold text-slate-800">${Number.isFinite(value) ? formatPct(value) : '-'}</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full ${colorClass}" style="width:${safeValue}%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">${escapeHtml(detail)}</p>
+        </div>
+    `;
+}
+
+function countHistoryByRole(history, role) {
+    return history.filter(item => item.pos === role).reduce((acc, item) => {
+        if (item.result === 'V') acc.wins++;
+        if (item.result === 'E') acc.draws++;
+        if (item.result === 'D') acc.losses++;
+        acc.points += item.points;
+        acc.matches++;
+        return acc;
+    }, { matches: 0, wins: 0, draws: 0, losses: 0, points: 0 });
+}
+
 function showPlayerModal(name) {
     if (!dashboardStats || !name) return;
     const player = dashboardStats.players[name];
@@ -1409,30 +1559,41 @@ function showPlayerModal(name) {
     const title = document.getElementById('player-modal-title');
     const summary = document.getElementById('player-modal-summary');
     const kpis = document.getElementById('player-modal-kpis');
-    const history = document.getElementById('player-modal-history');
-    if (!modal || !title || !summary || !kpis || !history) return;
+    const chart = document.getElementById('player-modal-chart');
+    const insights = document.getElementById('player-modal-insights');
+    if (!modal || !title || !summary || !kpis || !chart || !insights) return;
 
     const linePpg = player.lineMatches > 0 ? (player.linePoints / player.lineMatches).toFixed(2) : '-';
     const gkAvg = player.gkMatches > 0 ? (player.gkGoals / player.gkMatches).toFixed(2) : '-';
+    const totalPct = player.matches > 0 ? (player.points / (player.matches * 3)) * 100 : 0;
+    const linePct = player.lineMatches > 0 ? (player.linePoints / (player.lineMatches * 3)) * 100 : Number.NaN;
+    const gkPct = player.gkMatches > 0 ? (player.gkPoints / (player.gkMatches * 3)) * 100 : Number.NaN;
+    const lineRating = formatLineRating(player.name);
+    const gkRatingValue = getGoalkeeperRating(player.name);
+    const gkRating = gkRatingValue === null ? '-' : gkRatingValue.toFixed(1);
+    const lastGame = player.history[player.history.length - 1];
+    const lineRecord = countHistoryByRole(player.history, 'Linha');
+    const gkRecord = countHistoryByRole(player.history, 'Goleiro');
+
     title.textContent = player.name;
     summary.textContent = `${player.matches} jogos no período selecionado. ${player.wins}V / ${player.draws}E / ${player.losses}D.`;
     kpis.innerHTML = [
-        renderModalKpi('Pontos', player.points),
-        renderModalKpi('Linha PPG', linePpg),
-        renderModalKpi('Jogos como goleiro', player.gkMatches),
-        renderModalKpi('Média gols sofridos', gkAvg)
+        renderModalKpi('Aproveitamento', formatPct(totalPct)),
+        renderModalKpi('Rating linha', lineRating),
+        renderModalKpi('Rating goleiro', gkRating),
+        renderModalKpi('Última atuação', lastGame ? lastGame.date : '-')
     ].join('');
-    history.innerHTML = player.history.slice().reverse().map(item => `
-        <tr class="hover:bg-slate-50">
-            <td class="px-3 py-2">${item.id}</td>
-            <td class="px-3 py-2">${escapeHtml(item.date)}</td>
-            <td class="px-3 py-2">${escapeHtml(item.pos)}</td>
-            <td class="px-3 py-2">${escapeHtml(item.team)}</td>
-            <td class="px-3 py-2 font-semibold">${escapeHtml(getResultLabel(item.result))}</td>
-            <td class="px-3 py-2">${escapeHtml(item.score)}</td>
-            <td class="px-3 py-2">${item.goalsAgainst}</td>
-        </tr>
-    `).join('');
+    chart.innerHTML = [
+        renderPerformanceBar('Geral', totalPct, `${getRecordText(player.wins, player.draws, player.losses)} em ${player.matches} jogos`, 'bg-blue-600'),
+        renderPerformanceBar('Linha', linePct, lineRecord.matches > 0 ? `${linePpg} PPG em ${lineRecord.matches} jogos` : 'Sem jogos como linha no período', 'bg-emerald-600'),
+        renderPerformanceBar('Goleiro', gkPct, gkRecord.matches > 0 ? `${getRecordText(gkRecord.wins, gkRecord.draws, gkRecord.losses)}. Média sofrida: ${gkAvg}` : 'Sem jogos como goleiro no período', 'bg-amber-500')
+    ].join('');
+    insights.innerHTML = [
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Forma atual</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(getPlayerCurrentFormText(player))}</p></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Sequências</p><p class="text-slate-700 mt-1">Melhor invencibilidade: <strong>${player.bestUnbeaten}</strong>. Melhor sequência de vitórias: <strong>${player.bestWin}</strong>.</p></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Últimos 5</p><div class="mt-2">${renderRecentForm(player.lastResults)}</div></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Uso</p><p class="text-slate-700 mt-1">${player.lineMatches} jogos na linha e ${player.gkMatches} como goleiro.</p></div>`
+    ].join('');
     modal.classList.remove('hidden');
 }
 
@@ -1491,16 +1652,6 @@ function processData(games) {
         </div>
     `;
 
-    // Forma recente
-    const renderForm = (results) => {
-        const last = results.slice(-5);
-        if (last.length === 0) return '';
-        return last.map(r => {
-            const color = r === 'V' ? 'bg-green-500' : (r === 'E' ? 'bg-slate-400' : 'bg-red-500');
-            return `<span class="inline-block h-2.5 w-2.5 rounded-full ${color}"></span>`;
-        }).join(' ');
-    };
-
     // Ranking
     const sortedRanking = getOverallRanking(playersArr);
     document.getElementById('ranking-body').innerHTML = sortedRanking.map(p => `
@@ -1513,7 +1664,10 @@ function processData(games) {
             <td class="px-6 py-3 whitespace-nowrap text-red-500">${p.losses}</td>
             <td class="px-6 py-3 whitespace-nowrap text-blue-500">${p.draws}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-900 font-bold text-lg">${p.points}</td>
-            <td class="px-6 py-3 whitespace-nowrap text-slate-500 text-lg">${renderForm(p.lastResults)}</td>
+            <td class="px-6 py-3 whitespace-nowrap text-slate-500">
+                ${renderRecentForm(p.lastResults)}
+                <span class="block text-[11px] text-slate-500 mt-1">${escapeHtml(getPlayerCurrentFormText(p))}</span>
+            </td>
         </tr>
     `).join('');
 
