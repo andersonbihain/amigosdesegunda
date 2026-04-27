@@ -1412,7 +1412,7 @@ function processData(games) {
     // Duplas
     const duoBase = Object.entries(duos)
         .map(([name, stats]) => ({ name, ...stats, ppg: stats.points/stats.games }))
-        .filter(d => d.games >= 10);
+        .filter(d => d.games >= 4);
     const bestDuos = [...duoBase].sort((a,b) => b.ppg - a.ppg).slice(0, 5);
     const worstDuos = [...duoBase].sort((a,b) => a.ppg - b.ppg).slice(0, 5);
 
