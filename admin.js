@@ -2,6 +2,7 @@ const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
+const TEAM_DRAW_STORAGE_KEY = 'futstats_last_team_draw';
 
 let gamesAdmin = [];
 let playersAdmin = [];
@@ -102,6 +103,7 @@ function unlock() {
     initGameAudit();
     initExportData();
     initDefaultFilterSettings();
+    initStoredTeamDraw();
 }
 
 function initLogout() {
@@ -226,6 +228,7 @@ async function loadAdminData() {
     renderRatingsViewer();
     rebuildGameAuditOptions();
     renderGameAudit();
+    renderStoredTeamDrawPanel();
     maybeAutoRecomputeRatings();
 }
 
@@ -613,6 +616,89 @@ function gamesToCsv(games) {
     return rows.map(row => row.map(csvEscape).join(';')).join('\r\n');
 }
 
+function getStoredTeamDraw() {
+    try {
+        const raw = localStorage.getItem(TEAM_DRAW_STORAGE_KEY);
+        if (!raw) return null;
+        const draw = JSON.parse(raw);
+        if (!draw?.cinza?.goleiro || !draw?.branco?.goleiro) return null;
+        return {
+            savedAt: draw.savedAt || '',
+            cinza: {
+                goleiro: draw.cinza.goleiro,
+                linha: Array.isArray(draw.cinza.linha) ? draw.cinza.linha : []
+            },
+            branco: {
+                goleiro: draw.branco.goleiro,
+                linha: Array.isArray(draw.branco.linha) ? draw.branco.linha : []
+            }
+        };
+    } catch (err) {
+        console.warn('Sorteio salvo invalido:', err);
+        return null;
+    }
+}
+
+function formatStoredDrawTime(value) {
+    if (!value) return 'data desconhecida';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'data desconhecida';
+    return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function renderStoredTeamDrawPanel() {
+    const panel = document.getElementById('stored-team-draw');
+    const summary = document.getElementById('stored-team-draw-summary');
+    if (!panel || !summary) return;
+    const draw = getStoredTeamDraw();
+    panel.classList.toggle('hidden', !draw);
+    if (!draw) {
+        summary.textContent = '';
+        return;
+    }
+    summary.textContent = `Sorteio salvo em ${formatStoredDrawTime(draw.savedAt)}: ${draw.cinza.linha.length + 1} no Cinza e ${draw.branco.linha.length + 1} no Branco.`;
+}
+
+function selectValue(id, value) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.value = value || '';
+}
+
+function applyStoredTeamDrawToAddForm() {
+    const draw = getStoredTeamDraw();
+    const statusEl = document.getElementById('add-game-status');
+    if (!draw) {
+        if (statusEl) statusEl.textContent = 'Nenhum sorteio salvo para carregar.';
+        renderStoredTeamDrawPanel();
+        return;
+    }
+    selectValue('add-gk-cinza', draw.cinza.goleiro);
+    selectValue('add-gk-branco', draw.branco.goleiro);
+    fillMultiSelect('add-line-cinza', draw.cinza.linha);
+    fillMultiSelect('add-line-branco', draw.branco.linha);
+    if (statusEl) statusEl.textContent = 'Sorteio carregado. Revise os times, informe data e placar, depois salve.';
+}
+
+function clearStoredTeamDraw() {
+    localStorage.removeItem(TEAM_DRAW_STORAGE_KEY);
+    renderStoredTeamDrawPanel();
+}
+
+function initStoredTeamDraw() {
+    const loadBtn = document.getElementById('load-stored-team-draw');
+    const clearBtn = document.getElementById('clear-stored-team-draw');
+    if (loadBtn) loadBtn.addEventListener('click', applyStoredTeamDrawToAddForm);
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            clearStoredTeamDraw();
+            const statusEl = document.getElementById('add-game-status');
+            if (statusEl) statusEl.textContent = 'Sorteio salvo removido.';
+        });
+    }
+    renderStoredTeamDrawPanel();
+}
+
 function playersToCsv(players) {
     const rows = [['id', 'nome', 'posicao', 'posicao_secundaria', 'goleiro', 'rating_linha', 'rating_gk']];
     players.forEach(player => {
@@ -696,6 +782,7 @@ function initAddGameForm() {
         await recomputeRatingsAndUpdate();
         await loadAdminData();
         if (statusEl) statusEl.textContent = 'Jogo salvo e ratings atualizados.';
+        clearStoredTeamDraw();
         form.reset();
     });
 }

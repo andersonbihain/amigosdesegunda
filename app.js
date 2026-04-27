@@ -34,6 +34,7 @@ const SUPABASE_URL = 'https://lfwzjyiaqdngbcecaouu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_oCgYlTOm2NGBNZ7YhpMi2w_I7E2V_Fn';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const DEFAULT_FILTER_START_SETTING_KEY = 'default_filter_start_date';
+const TEAM_DRAW_STORAGE_KEY = 'futstats_last_team_draw';
 
 function standardize(name) {
     if (!name) return 'Desconhecido';
@@ -96,6 +97,12 @@ function getRecordText(wins, draws, losses) {
     return `${wins}V / ${draws}E / ${losses}D`;
 }
 
+function formatDaysInactive(days) {
+    if (!Number.isFinite(days)) return 'Sem jogos registrados';
+    if (days === 1) return '1 dia sem jogar';
+    return `${days} dias sem jogar`;
+}
+
 function getRankingMinimums() {
     return {
         overall: 1,
@@ -129,6 +136,23 @@ const TEAM_PICKER_EXCLUDE = new Set([
 ]);
 const teamPickerState = { cinza: [], branco: [], gkCinza: '', gkBranco: '' };
 const teamPickerSelection = { cinza: null, branco: null };
+
+function saveCurrentTeamDraw() {
+    if (teamPickerState.cinza.length === 0 || teamPickerState.branco.length === 0) return false;
+    const payload = {
+        savedAt: new Date().toISOString(),
+        cinza: {
+            goleiro: teamPickerState.gkCinza,
+            linha: [...teamPickerState.cinza]
+        },
+        branco: {
+            goleiro: teamPickerState.gkBranco,
+            linha: [...teamPickerState.branco]
+        }
+    };
+    localStorage.setItem(TEAM_DRAW_STORAGE_KEY, JSON.stringify(payload));
+    return true;
+}
 
 function setTeamPickerPlayersVisible(isVisible) {
     const playersSection = document.getElementById('team-picker-all-players');
@@ -1190,6 +1214,7 @@ function initTeamPicker() {
     if (whatsappBtn) {
         whatsappBtn.addEventListener('click', () => {
             if (teamPickerState.cinza.length === 0 || teamPickerState.branco.length === 0) return;
+            saveCurrentTeamDraw();
             const message = buildWhatsAppMessage();
             const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank', 'noopener');
@@ -1461,6 +1486,78 @@ function buildDashboardStats(games) {
     return { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos };
 }
 
+function getGamePlayerNames(game) {
+    return [
+        game.cinza?.goleiro,
+        game.branco?.goleiro,
+        ...(game.cinza?.linha || []),
+        ...(game.branco?.linha || [])
+    ].filter(Boolean).map(standardize);
+}
+
+function getInactivePlayers(months = 2) {
+    const names = new Set(playerOptions);
+    const lastByName = {};
+    [...originalGames].sort((a, b) => a.id - b.id).forEach(game => {
+        getGamePlayerNames(game).forEach(name => {
+            lastByName[name] = game.data;
+            names.add(name);
+        });
+    });
+
+    const threshold = new Date();
+    threshold.setMonth(threshold.getMonth() - months);
+    const thresholdTime = Date.UTC(threshold.getFullYear(), threshold.getMonth(), threshold.getDate());
+    const todayTime = Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+    return Array.from(names).map(name => {
+        const lastDate = lastByName[name] || '';
+        const lastTime = parseBrDateToTime(lastDate);
+        const daysInactive = Number.isFinite(lastTime)
+            ? Math.floor((todayTime - lastTime) / (1000 * 60 * 60 * 24))
+            : Number.POSITIVE_INFINITY;
+        return { name, lastDate, lastTime, daysInactive };
+    })
+        .filter(item => !Number.isFinite(item.lastTime) || item.lastTime < thresholdTime)
+        .sort((a, b) => {
+            if (!Number.isFinite(a.lastTime) && Number.isFinite(b.lastTime)) return -1;
+            if (Number.isFinite(a.lastTime) && !Number.isFinite(b.lastTime)) return 1;
+            return b.daysInactive - a.daysInactive || a.name.localeCompare(b.name, 'pt-BR');
+        });
+}
+
+function renderInactivePlayers() {
+    const container = document.getElementById('inactive-alert-container');
+    if (!container) return;
+    const inactive = getInactivePlayers(2);
+    if (inactive.length === 0) {
+        container.innerHTML = '<p class="text-sm text-slate-500">Nenhum atleta está há mais de dois meses sem jogar.</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            ${inactive.map((item, idx) => `
+                <div class="border border-red-200 bg-red-50 rounded-lg p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">#${idx + 1}</span>
+                            <div>
+                                <p class="font-bold text-red-950">${escapeHtml(item.name)}</p>
+                                <p class="text-xs text-red-700 mt-1">Última atuação: ${item.lastDate ? escapeHtml(item.lastDate) : 'Sem jogos registrados'}</p>
+                            </div>
+                        </div>
+                        <div class="shrink-0">
+                            <span class="text-xs font-bold bg-red-600 text-white rounded-full px-2 py-1">ALERTA</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-red-800 mt-3">${escapeHtml(formatDaysInactive(item.daysInactive))}</p>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
 function getOverallRanking(playersArr) {
     return [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins || compareByName(a, b));
 }
@@ -1687,6 +1784,7 @@ function processData(games) {
         document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
         document.getElementById('streaks-container').innerHTML = '';
         document.getElementById('player-compare-results').innerHTML = '';
+        renderInactivePlayers();
         return;
     }
 
@@ -1795,6 +1893,7 @@ function processData(games) {
             <td class="px-6 py-3 font-bold text-red-600">${d.ppg.toFixed(2)}</td>
         </tr>
     `).join('');
+    renderInactivePlayers();
 
     // Últimos jogos
     const gamesById = [...orderedGames];
