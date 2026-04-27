@@ -1468,12 +1468,14 @@ function processData(games) {
     });
 
     // Streaks
-    const freqThreshold = 10;
     const unbeatenLeader = playersArr.reduce((best, p) => p.bestUnbeaten > (best?.bestUnbeaten || 0) ? p : best, null);
     const winLeader = playersArr.reduce((best, p) => p.bestWin > (best?.bestWin || 0) ? p : best, null);
     const droughtLeader = playersArr
-        .filter(p => p.matches >= freqThreshold)
-        .reduce((best, p) => (!best || p.currentNoWin > best.currentNoWin) ? p : best, null);
+        .reduce((best, p) => {
+            if (!best || p.currentNoWin > best.currentNoWin) return p;
+            if (p.currentNoWin === best.currentNoWin && p.name.localeCompare(best.name, 'pt-BR') < 0) return p;
+            return best;
+        }, null);
 
     document.getElementById('streaks-container').innerHTML = `
         <div class="bg-white border border-slate-200 rounded-lg p-4">
@@ -1487,7 +1489,7 @@ function processData(games) {
             <p class="text-sm text-slate-500">${winLeader ? `${winLeader.bestWin} vit\u00f3rias seguidas` : 'Sem dados'}</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
-            <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vit\u00f3rias (freq. \u2265 ${freqThreshold})</p>
+            <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vit\u00f3rias</p>
             <p class="text-lg font-bold text-slate-800 mt-1">${droughtLeader ? droughtLeader.name : '-'}</p>
             <p class="text-sm text-slate-500">${droughtLeader ? `${droughtLeader.currentNoWin} jogos sem vencer` : 'Sem dados'}</p>
         </div>
