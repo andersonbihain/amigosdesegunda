@@ -96,6 +96,20 @@ function getRecordText(wins, draws, losses) {
     return `${wins}V / ${draws}E / ${losses}D`;
 }
 
+function getNumberInputValue(id, fallback) {
+    const input = document.getElementById(id);
+    const value = parseInt(input?.value, 10);
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function getRankingMinimums() {
+    return {
+        overall: getNumberInputValue('min-overall-games', 5),
+        line: getNumberInputValue('min-line-games', 10),
+        gk: getNumberInputValue('min-gk-games', 1)
+    };
+}
+
 // --- ESTADO GLOBAL ---
 let originalGames = [];
 let dateValues = [];
@@ -106,6 +120,7 @@ let playerStats = {};
 let dashboardStats = null;
 let gkGlobalAvg = 0;
 let defaultFilterStartDate = '';
+let currentFilteredGames = [];
 const TEAM_PICKER_EXCLUDE = new Set([
     'Leonel',
     'Anderson G',
@@ -137,12 +152,14 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
     initPlayerModal();
+    initRankingControls();
+    initPlayerCompare();
     loadFromSupabase();
 });
 
 async function loadFromSupabase() {
     try {
-        if (!supabaseClient) throw new Error('Supabase nao carregou.');
+        if (!supabaseClient) throw new Error('Supabase não carregou.');
         const [{ data: games, error: gamesError }, { data: profiles, error: profilesError }, { data: setting, error: settingError }] = await Promise.all([
             supabaseClient.from('games').select('*').order('id', { ascending: true }),
             supabaseClient.from('players').select('*').order('nome', { ascending: true }),
@@ -152,7 +169,7 @@ async function loadFromSupabase() {
         if (profilesError) throw profilesError;
         originalGames = Array.isArray(games) ? games : [];
         if (settingError) {
-            console.warn('Configuracao global do filtro indisponivel:', settingError);
+            console.warn('Configuração global do filtro indisponível:', settingError);
             defaultFilterStartDate = '';
         } else {
             defaultFilterStartDate = setting && /^\d{4}-\d{2}-\d{2}$/.test(setting.value) ? setting.value : '';
@@ -417,7 +434,7 @@ function initAddPlayerForm() {
 
         const name = standardize(rawName);
         if (playerProfileMap[name]) {
-            if (statusEl) statusEl.textContent = 'Esse atleta ja existe na lista.';
+            if (statusEl) statusEl.textContent = 'Esse atleta já existe na lista.';
             return;
         }
 
@@ -452,7 +469,7 @@ function initAddPlayerForm() {
         nameInput.value = '';
         gkInput.checked = false;
         secondarySelect.querySelectorAll('option').forEach(opt => { opt.selected = false; });
-        if (statusEl) statusEl.textContent = `Atleta ${name} adicionado nesta sessao.`;
+        if (statusEl) statusEl.textContent = `Atleta ${name} adicionado nesta sessão.`;
     });
 }
 
@@ -593,7 +610,7 @@ function buildWhatsAppMessage() {
     ];
 
     return [
-        'Atencao as cores dos uniformes e ordem de substituicao:',
+        'Atenção às cores dos uniformes e ordem de substituição:',
         '',
         `Time cinza: ${'\u{1F3F4}'.repeat(4)}`,
         ...cinzaList,
@@ -1200,7 +1217,7 @@ function initTeamPicker() {
                 const idxCinza = teamPickerState.cinza.indexOf(a);
                 const idxBranco = teamPickerState.branco.indexOf(b);
                 if (idxCinza === -1 || idxBranco === -1) {
-                    if (statusEl) statusEl.textContent = 'Nao foi possivel localizar os jogadores selecionados.';
+                    if (statusEl) statusEl.textContent = 'Não foi possível localizar os jogadores selecionados.';
                     return;
                 }
                 const teamSize = teamPickerState.cinza.length;
@@ -1213,7 +1230,7 @@ function initTeamPicker() {
                     const okCinza = canMeetTeamFormation(nextCinza, formation);
                     const okBranco = canMeetTeamFormation(nextBranco, formation);
                     if (!okCinza || !okBranco) {
-                        if (statusEl) statusEl.textContent = 'Troca nao mantem a formacao 2-3-2.';
+                        if (statusEl) statusEl.textContent = 'Troca não mantém a formação 2-3-2.';
                         return;
                     }
                 }
@@ -1302,10 +1319,10 @@ function initTeamPicker() {
                     ? ` Sobram ${linePool.length - required} jogadores fora do sorteio.`
                     : '';
                 const missingInfo = missingPos.length > 0
-                    ? ` Posicao pendente para: ${missingPos.join(', ')}.`
+                    ? ` Posição pendente para: ${missingPos.join(', ')}.`
                     : '';
                 const formationInfo = formationOk === false
-                    ? ' Formacao 2-3-2 nao foi possivel manter com equilibrio.'
+                    ? ' Formação 2-3-2 não foi possível manter com equilíbrio.'
                     : '';
                 statusEl.textContent = `Times sorteados com sucesso.${extraInfo}${missingInfo}${formationInfo}`;
             }
@@ -1329,6 +1346,7 @@ function applyFilter() {
         info.textContent = 'Mostrando todos os jogos';
     }
 
+    currentFilteredGames = filtered;
     processData(filtered);
 }
 
@@ -1452,13 +1470,29 @@ function buildDashboardStats(games) {
     return { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos };
 }
 
+function initRankingControls() {
+    ['min-overall-games', 'min-line-games', 'min-gk-games'].forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener('change', () => {
+            if (currentFilteredGames.length > 0) processData(currentFilteredGames);
+        });
+    });
+}
+
 function getOverallRanking(playersArr) {
     return [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins || compareByName(a, b));
 }
 
-function getGoalkeeperRanking(playersArr) {
+function getOverallEfficiencyRanking(playersArr, minMatches) {
     return playersArr
-        .filter(p => p.gkMatches > 0)
+        .filter(p => p.matches >= minMatches)
+        .sort((a, b) => (b.points / (b.matches * 3)) - (a.points / (a.matches * 3)) || b.points - a.points || compareByName(a, b));
+}
+
+function getGoalkeeperRanking(playersArr, minMatches = 1) {
+    return playersArr
+        .filter(p => p.gkMatches >= minMatches)
         .sort((a,b) => {
             const avgA = a.gkGoals / a.gkMatches;
             const avgB = b.gkGoals / b.gkMatches;
@@ -1466,9 +1500,9 @@ function getGoalkeeperRanking(playersArr) {
         });
 }
 
-function getLineRanking(playersArr) {
+function getLineRanking(playersArr, minMatches = 10) {
     return playersArr
-        .filter(p => p.lineMatches >= 10)
+        .filter(p => p.lineMatches >= minMatches)
         .sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches) || compareByName(a, b));
 }
 
@@ -1597,6 +1631,76 @@ function showPlayerModal(name) {
     modal.classList.remove('hidden');
 }
 
+function initPlayerCompare() {
+    ['compare-player-a', 'compare-player-b'].forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.addEventListener('change', renderPlayerComparison);
+    });
+}
+
+function rebuildPlayerCompareOptions(playersArr) {
+    const selectA = document.getElementById('compare-player-a');
+    const selectB = document.getElementById('compare-player-b');
+    if (!selectA || !selectB) return;
+    const names = playersArr.map(p => p.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const html = names.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+    const oldA = selectA.value;
+    const oldB = selectB.value;
+    selectA.innerHTML = html;
+    selectB.innerHTML = html;
+    if (names.includes(oldA)) selectA.value = oldA;
+    if (names.includes(oldB)) selectB.value = oldB;
+    if (!selectB.value && names.length > 1) selectB.value = names[1];
+    if (selectA.value === selectB.value && names.length > 1) {
+        selectB.value = names.find(name => name !== selectA.value) || names[0];
+    }
+}
+
+function getPlayerCompareMetrics(player) {
+    const overallPct = player.matches > 0 ? (player.points / (player.matches * 3)) * 100 : 0;
+    const linePct = player.lineMatches > 0 ? (player.linePoints / (player.lineMatches * 3)) * 100 : Number.NaN;
+    const gkPct = player.gkMatches > 0 ? (player.gkPoints / (player.gkMatches * 3)) * 100 : Number.NaN;
+    const gkAvg = player.gkMatches > 0 ? (player.gkGoals / player.gkMatches).toFixed(2) : '-';
+    return { overallPct, linePct, gkPct, gkAvg };
+}
+
+function renderCompareCard(player) {
+    if (!player) return '<div class="text-sm text-slate-500">Selecione um jogador.</div>';
+    const metrics = getPlayerCompareMetrics(player);
+    return `
+        <div class="border border-slate-200 rounded-lg p-4">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                    <h4 class="font-bold text-slate-800">${escapeHtml(player.name)}</h4>
+                    <p class="text-xs text-slate-500">${getRecordText(player.wins, player.draws, player.losses)} em ${player.matches} jogos</p>
+                </div>
+                <button type="button" class="player-detail-link text-xs" data-player="${escapeHtml(player.name)}">Abrir ficha</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Aproveitamento</span><strong>${formatPct(metrics.overallPct)}</strong></div>
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Pontos</span><strong>${player.points}</strong></div>
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Linha</span><strong>${Number.isFinite(metrics.linePct) ? formatPct(metrics.linePct) : '-'}</strong></div>
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Goleiro</span><strong>${Number.isFinite(metrics.gkPct) ? formatPct(metrics.gkPct) : '-'}</strong></div>
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Rating linha</span><strong>${formatLineRating(player.name)}</strong></div>
+                <div class="bg-slate-50 rounded p-2"><span class="block text-xs text-slate-500">Média sofrida</span><strong>${metrics.gkAvg}</strong></div>
+            </div>
+            <div class="mt-3">${renderRecentForm(player.lastResults)}</div>
+        </div>
+    `;
+}
+
+function renderPlayerComparison() {
+    if (!dashboardStats) return;
+    const container = document.getElementById('player-compare-results');
+    const selectA = document.getElementById('compare-player-a');
+    const selectB = document.getElementById('compare-player-b');
+    if (!container || !selectA || !selectB) return;
+    const playerA = dashboardStats.players[selectA.value];
+    const playerB = dashboardStats.players[selectB.value];
+    container.innerHTML = `${renderCompareCard(playerA)}${renderCompareCard(playerB)}`;
+}
+
 function processData(games) {
     if (!Array.isArray(games) || games.length === 0) {
         dashboardStats = null;
@@ -1604,17 +1708,21 @@ function processData(games) {
         document.getElementById('team-stats-container').innerHTML = '';
         document.getElementById('ranking-body').innerHTML = '';
         document.getElementById('gk-body').innerHTML = '';
+        document.getElementById('overall-efficiency-body').innerHTML = '';
         document.getElementById('line-body').innerHTML = '';
         document.getElementById('duo-body').innerHTML = '';
         document.getElementById('duo-worst-body').innerHTML = '';
         document.getElementById('game-select').innerHTML = '';
         document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
         document.getElementById('streaks-container').innerHTML = '';
+        document.getElementById('player-compare-results').innerHTML = '';
         return;
     }
 
     dashboardStats = buildDashboardStats(games);
     const { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos } = dashboardStats;
+    const minimums = getRankingMinimums();
+    rebuildPlayerCompareOptions(playersArr);
 
     // KPIs
     document.getElementById('kpis-container').innerHTML = `
@@ -1672,7 +1780,7 @@ function processData(games) {
     `).join('');
 
     // Goleiros
-    const gkArr = getGoalkeeperRanking(playersArr);
+    const gkArr = getGoalkeeperRanking(playersArr, minimums.gk);
     document.getElementById('gk-body').innerHTML = gkArr.map((p, idx) => {
         const media = (p.gkGoals / p.gkMatches).toFixed(2);
         const aproveitamento = formatPct((p.gkPoints / (p.gkMatches * 3)) * 100);
@@ -1694,7 +1802,19 @@ function processData(games) {
     }).join('');
 
     // Linha
-    const lineArr = getLineRanking(playersArr);
+    const overallEfficiencyArr = getOverallEfficiencyRanking(playersArr, minimums.overall);
+    document.getElementById('overall-efficiency-body').innerHTML = overallEfficiencyArr.map(p => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2 font-medium">
+                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
+            </td>
+            <td class="px-4 py-2">${p.matches}</td>
+            <td class="px-4 py-2 font-bold text-blue-600">${p.points}</td>
+            <td class="px-4 py-2 text-xs text-slate-500">${formatPct((p.points / (p.matches*3))*100)}</td>
+        </tr>
+    `).join('');
+
+    const lineArr = getLineRanking(playersArr, minimums.line);
     document.getElementById('line-body').innerHTML = lineArr.map(p => `
         <tr class="hover:bg-slate-50">
             <td class="px-4 py-2 font-medium">
@@ -1705,6 +1825,7 @@ function processData(games) {
             <td class="px-4 py-2 text-xs text-slate-500">${formatPct((p.linePoints / (p.lineMatches*3))*100)}</td>
         </tr>
     `).join('');
+    renderPlayerComparison();
 
     // Duplas
     const duoBase = Object.entries(duos)

@@ -159,12 +159,12 @@ function initDefaultFilterSettings() {
         input.value = stored;
         currentEl.textContent = stored
             ? `Filtro inicial atual: ${stored.split('-').reverse().join('/')}`
-            : 'Filtro inicial atual: historico completo';
+            : 'Filtro inicial atual: histórico completo';
     };
 
     refreshView().catch((err) => {
-        console.error('Erro ao carregar filtro padrao:', err);
-        statusEl.textContent = 'Nao foi possivel carregar o filtro padrao.';
+        console.error('Erro ao carregar filtro padrão:', err);
+        statusEl.textContent = 'Não foi possível carregar o filtro padrão.';
     });
 
     form.addEventListener('submit', async (e) => {
@@ -177,11 +177,11 @@ function initDefaultFilterSettings() {
         }
         try {
             await setDefaultFilterStartDateSetting(value);
-            statusEl.textContent = 'Filtro inicial salvo. Recarregue o dashboard se ele ja estiver aberto.';
+            statusEl.textContent = 'Filtro inicial salvo. Recarregue o dashboard se ele já estiver aberto.';
             await refreshView();
         } catch (err) {
-            console.error('Erro ao salvar filtro padrao:', err);
-            statusEl.textContent = `Nao foi possivel salvar o filtro inicial. ${err.message || ''}`.trim();
+            console.error('Erro ao salvar filtro padrão:', err);
+            statusEl.textContent = `Não foi possível salvar o filtro inicial. ${err.message || ''}`.trim();
         }
     });
 
@@ -190,11 +190,11 @@ function initDefaultFilterSettings() {
             statusEl.textContent = '';
             try {
                 await setDefaultFilterStartDateSetting('');
-                statusEl.textContent = 'Filtro inicial removido. Recarregue o dashboard se ele ja estiver aberto.';
+                statusEl.textContent = 'Filtro inicial removido. Recarregue o dashboard se ele já estiver aberto.';
                 await refreshView();
             } catch (err) {
-                console.error('Erro ao limpar filtro padrao:', err);
-                statusEl.textContent = `Nao foi possivel limpar o filtro inicial. ${err.message || ''}`.trim();
+                console.error('Erro ao limpar filtro padrão:', err);
+                statusEl.textContent = `Não foi possível limpar o filtro inicial. ${err.message || ''}`.trim();
             }
         });
     }
@@ -250,6 +250,12 @@ function toIsoDate(brDate) {
     return `${yyyy}-${mm}-${dd}`;
 }
 
+function brDateToTime(brDate) {
+    const iso = toIsoDate(brDate);
+    if (!iso) return 0;
+    return Date.parse(`${iso}T00:00:00Z`) || 0;
+}
+
 function getSelectedValues(id) {
     const el = document.getElementById(id);
     return el ? Array.from(el.selectedOptions).map(o => o.value) : [];
@@ -269,6 +275,25 @@ function validateGamePayload({ dateVal, gkC, gkB, lineC, lineB }) {
     if (lineSetC.has(gkC) || lineSetB.has(gkC)) return `${gkC} esta como goleiro e jogador de linha.`;
     if (lineSetC.has(gkB) || lineSetB.has(gkB)) return `${gkB} esta como goleiro e jogador de linha.`;
     return '';
+}
+
+function getGameWarnings(game) {
+    const warnings = [];
+    const lineC = game.cinza?.linha || [];
+    const lineB = game.branco?.linha || [];
+    const gkC = game.cinza?.goleiro || '';
+    const gkB = game.branco?.goleiro || '';
+    if (!game.data) warnings.push('sem data');
+    if (!gkC || !gkB) warnings.push('goleiro faltando');
+    if (gkC && gkB && gkC === gkB) warnings.push('goleiros iguais');
+    if (lineC.length === 0 || lineB.length === 0) warnings.push('linha vazia');
+    if (lineC.length !== lineB.length) warnings.push('times com tamanhos diferentes');
+    const setC = new Set(lineC);
+    const repeated = lineB.find(name => setC.has(name));
+    if (repeated) warnings.push(`${repeated} nos dois times`);
+    if (lineC.includes(gkC) || lineB.includes(gkC)) warnings.push(`${gkC} goleiro e linha`);
+    if (lineC.includes(gkB) || lineB.includes(gkB)) warnings.push(`${gkB} goleiro e linha`);
+    return warnings;
 }
 
 function formatRatingValue(value) {
@@ -373,8 +398,10 @@ function rebuildGameAuditOptions() {
 function renderGameAudit() {
     const tbody = document.getElementById('game-audit-body');
     const searchInput = document.getElementById('game-audit-search');
+    const sortSelect = document.getElementById('game-audit-sort');
     if (!tbody) return;
     const query = (searchInput?.value || '').trim().toLowerCase();
+    const sortMode = sortSelect?.value || 'id-desc';
     const filtered = gamesAdmin
         .filter(game => {
             const haystack = [
@@ -387,22 +414,36 @@ function renderGameAudit() {
             ].join(' ').toLowerCase();
             return !query || haystack.includes(query);
         })
-        .slice()
-        .sort((a, b) => b.id - a.id);
+        .slice();
+
+    filtered.sort((a, b) => {
+        if (sortMode === 'id-asc') return a.id - b.id;
+        if (sortMode === 'date-desc') return brDateToTime(b.data) - brDateToTime(a.data) || b.id - a.id;
+        if (sortMode === 'date-asc') return brDateToTime(a.data) - brDateToTime(b.data) || a.id - b.id;
+        return b.id - a.id;
+    });
 
     tbody.innerHTML = filtered.map(game => `
-        <tr class="hover:bg-slate-50">
+        ${(() => {
+            const warnings = getGameWarnings(game);
+            return `
+        <tr class="hover:bg-slate-50 ${warnings.length > 0 ? 'bg-amber-50/50' : ''}">
             <td class="px-3 py-2 font-semibold text-slate-800">${game.id}</td>
             <td class="px-3 py-2">${escapeHtml(game.data)}</td>
             <td class="px-3 py-2">${game.placar?.cinza ?? 0} x ${game.placar?.branco ?? 0}</td>
             <td class="px-3 py-2 text-slate-600">${escapeHtml(game.cinza?.goleiro || '-')} / ${escapeHtml(game.branco?.goleiro || '-')}</td>
+            <td class="px-3 py-2 text-slate-600">${game.cinza?.linha?.length || 0} x ${game.branco?.linha?.length || 0}</td>
+            <td class="px-3 py-2 text-xs text-amber-700">${warnings.length > 0 ? escapeHtml(warnings.join('; ')) : '-'}</td>
             <td class="px-3 py-2">
                 <div class="flex flex-wrap gap-2">
                     <button type="button" class="game-edit-btn text-xs font-semibold text-blue-700 hover:text-blue-900" data-game-id="${game.id}">Editar</button>
+                    <button type="button" class="game-duplicate-btn text-xs font-semibold text-emerald-700 hover:text-emerald-900" data-game-id="${game.id}">Duplicar</button>
                     <button type="button" class="game-delete-btn text-xs font-semibold text-red-700 hover:text-red-900" data-game-id="${game.id}">Remover</button>
                 </div>
             </td>
         </tr>
+            `;
+        })()}
     `).join('');
 }
 
@@ -423,6 +464,7 @@ function openEditGame(game) {
     if (statusEl) statusEl.textContent = '';
     document.getElementById('edit-game-title').textContent = `Editar jogo ${game.id}`;
     document.getElementById('edit-game-id').value = game.id;
+    document.getElementById('edit-game-mode').value = 'edit';
     document.getElementById('edit-game-date').value = toIsoDate(game.data);
     document.getElementById('edit-score-cinza').value = game.placar?.cinza ?? 0;
     document.getElementById('edit-score-branco').value = game.placar?.branco ?? 0;
@@ -431,6 +473,18 @@ function openEditGame(game) {
     fillMultiSelect('edit-line-cinza', game.cinza?.linha || []);
     fillMultiSelect('edit-line-branco', game.branco?.linha || []);
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openDuplicateGame(game) {
+    openEditGame(game);
+    const title = document.getElementById('edit-game-title');
+    const idInput = document.getElementById('edit-game-id');
+    const modeInput = document.getElementById('edit-game-mode');
+    const statusEl = document.getElementById('edit-game-status');
+    if (title) title.textContent = `Duplicar jogo ${game.id}`;
+    if (idInput) idInput.value = '';
+    if (modeInput) modeInput.value = 'duplicate';
+    if (statusEl) statusEl.textContent = 'Ajuste a data e salve para criar um novo jogo.';
 }
 
 function closeEditGame() {
@@ -442,19 +496,27 @@ function closeEditGame() {
 
 function initGameAudit() {
     const searchInput = document.getElementById('game-audit-search');
+    const sortSelect = document.getElementById('game-audit-sort');
     const tbody = document.getElementById('game-audit-body');
     const form = document.getElementById('edit-game-form');
     const cancelBtn = document.getElementById('edit-game-cancel');
     if (searchInput) searchInput.addEventListener('input', renderGameAudit);
+    if (sortSelect) sortSelect.addEventListener('change', renderGameAudit);
     if (cancelBtn) cancelBtn.addEventListener('click', closeEditGame);
 
     if (tbody) {
         tbody.addEventListener('click', async (event) => {
             const editBtn = event.target.closest('.game-edit-btn');
+            const duplicateBtn = event.target.closest('.game-duplicate-btn');
             const deleteBtn = event.target.closest('.game-delete-btn');
             if (editBtn) {
                 const game = gamesAdmin.find(g => String(g.id) === editBtn.dataset.gameId);
                 openEditGame(game);
+                return;
+            }
+            if (duplicateBtn) {
+                const game = gamesAdmin.find(g => String(g.id) === duplicateBtn.dataset.gameId);
+                if (game) openDuplicateGame(game);
                 return;
             }
             if (deleteBtn) {
@@ -480,6 +542,7 @@ function initGameAudit() {
             const statusEl = document.getElementById('edit-game-status');
             if (statusEl) statusEl.textContent = '';
             const id = document.getElementById('edit-game-id').value;
+            const mode = document.getElementById('edit-game-mode').value;
             const dateVal = document.getElementById('edit-game-date').value;
             const scoreC = parseInt(document.getElementById('edit-score-cinza').value, 10) || 0;
             const scoreB = parseInt(document.getElementById('edit-score-branco').value, 10) || 0;
@@ -498,7 +561,10 @@ function initGameAudit() {
                 branco: { goleiro: gkB, linha: lineB },
                 placar: { cinza: scoreC, branco: scoreB }
             };
-            const { error } = await supabaseClient.from('games').update(payload).eq('id', id);
+            const request = mode === 'duplicate'
+                ? supabaseClient.from('games').insert(payload)
+                : supabaseClient.from('games').update(payload).eq('id', id);
+            const { error } = await request;
             if (error) {
                 if (statusEl) statusEl.textContent = 'Erro ao salvar jogo.';
                 console.error(error);
@@ -506,7 +572,9 @@ function initGameAudit() {
             }
             await recomputeRatingsAndUpdate();
             await loadAdminData();
-            if (statusEl) statusEl.textContent = 'Jogo atualizado e ratings recalculados.';
+            if (statusEl) statusEl.textContent = mode === 'duplicate'
+                ? 'Novo jogo criado e ratings recalculados.'
+                : 'Jogo atualizado e ratings recalculados.';
         });
     }
 }
@@ -672,7 +740,7 @@ function initAddPlayerForm() {
             return;
         }
         if (playersAdmin.some(p => p.nome.toLowerCase() === rawName.toLowerCase())) {
-            if (statusEl) statusEl.textContent = 'Esse atleta ja existe.';
+            if (statusEl) statusEl.textContent = 'Esse atleta já existe.';
             return;
         }
 

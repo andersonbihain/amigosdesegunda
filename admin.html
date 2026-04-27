@@ -281,10 +281,21 @@
                     <h2 class="text-lg font-bold text-slate-800">Auditoria de jogos</h2>
                     <p class="text-xs text-slate-500 mt-1">Edite ou remova jogos j&aacute; cadastrados.</p>
                 </div>
-                <label class="text-xs font-semibold text-slate-500 md:w-64">
-                    Buscar por data ou goleiro
-                    <input id="game-audit-search" type="search" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Ex.: 12/03 ou Daniel">
-                </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-[460px]">
+                    <label class="text-xs font-semibold text-slate-500">
+                        Ordenar
+                        <select id="game-audit-sort" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                            <option value="id-desc">Mais recentes</option>
+                            <option value="id-asc">Mais antigos</option>
+                            <option value="date-desc">Data desc.</option>
+                            <option value="date-asc">Data asc.</option>
+                        </select>
+                    </label>
+                    <label class="text-xs font-semibold text-slate-500">
+                        Buscar por data ou goleiro
+                        <input id="game-audit-search" type="search" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Ex.: 12/03 ou Daniel">
+                    </label>
+                </div>
             </div>
             <div class="overflow-x-auto border border-slate-200 rounded-lg mb-5">
                 <table class="min-w-full text-sm">
@@ -294,6 +305,8 @@
                             <th class="text-left font-semibold px-3 py-2">Data</th>
                             <th class="text-left font-semibold px-3 py-2">Placar</th>
                             <th class="text-left font-semibold px-3 py-2">Goleiros</th>
+                            <th class="text-left font-semibold px-3 py-2">Linhas</th>
+                            <th class="text-left font-semibold px-3 py-2">Alertas</th>
                             <th class="text-left font-semibold px-3 py-2">A&ccedil;&otilde;es</th>
                         </tr>
                     </thead>
@@ -306,6 +319,7 @@
                     <button id="edit-game-cancel" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-900">Cancelar</button>
                 </div>
                 <input id="edit-game-id" type="hidden">
+                <input id="edit-game-mode" type="hidden" value="edit">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <label class="text-xs font-semibold text-slate-500">Data
                         <input id="edit-game-date" type="date" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
