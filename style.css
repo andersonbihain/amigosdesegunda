@@ -201,6 +201,15 @@ tr {
     text-align: center;
     min-width: 44px;
 }
+.player-detail-link {
+    color: inherit;
+    font-weight: 600;
+    text-align: left;
+}
+.player-detail-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
 .admin-action-btn {
     border: 1px solid #e2e8f0;
     border-radius: 12px;

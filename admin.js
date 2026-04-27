@@ -99,6 +99,8 @@ function unlock() {
     initEditPlayerForm();
     initRemovePlayer();
     initRatingsViewer();
+    initGameAudit();
+    initExportData();
     initDefaultFilterSettings();
 }
 
@@ -222,6 +224,8 @@ async function loadAdminData() {
     rebuildRemovePlayerOptions();
     rebuildEditPlayerOptions();
     renderRatingsViewer();
+    rebuildGameAuditOptions();
+    renderGameAudit();
     maybeAutoRecomputeRatings();
 }
 
@@ -232,6 +236,39 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function toBrDate(isoDate) {
+    if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return '';
+    const [yyyy, mm, dd] = isoDate.split('-');
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function toIsoDate(brDate) {
+    if (!brDate || !/^\d{2}\/\d{2}\/\d{4}$/.test(brDate)) return '';
+    const [dd, mm, yyyy] = brDate.split('/');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function getSelectedValues(id) {
+    const el = document.getElementById(id);
+    return el ? Array.from(el.selectedOptions).map(o => o.value) : [];
+}
+
+function validateGamePayload({ dateVal, gkC, gkB, lineC, lineB }) {
+    if (!dateVal || lineC.length === 0 || lineB.length === 0) {
+        return 'Preencha data e selecione pelo menos um jogador em cada linha.';
+    }
+    if (!gkC || !gkB) return 'Selecione os dois goleiros.';
+    if (gkC === gkB) return 'Os goleiros precisam ser diferentes.';
+
+    const lineSetC = new Set(lineC);
+    const lineSetB = new Set(lineB);
+    const repeatedLine = lineC.find(name => lineSetB.has(name));
+    if (repeatedLine) return `${repeatedLine} esta nas duas linhas.`;
+    if (lineSetC.has(gkC) || lineSetB.has(gkC)) return `${gkC} esta como goleiro e jogador de linha.`;
+    if (lineSetC.has(gkB) || lineSetB.has(gkB)) return `${gkB} esta como goleiro e jogador de linha.`;
+    return '';
 }
 
 function formatRatingValue(value) {
@@ -279,10 +316,10 @@ function renderRatingsViewer() {
         <tr class="hover:bg-slate-50">
             <td class="px-3 py-2 font-semibold text-slate-800">${escapeHtml(player.nome)}</td>
             <td class="px-3 py-2">
-                <span class="${getRatingBadgeClass(player.rating_linha)}">${formatRatingValue(player.rating_linha)}</span>
+                <span class="${getRatingBadgeClass(player.rating_linha)}" title="Rating de linha: pontos por jogo com peso maior para jogos recentes.">${formatRatingValue(player.rating_linha)}</span>
             </td>
             <td class="px-3 py-2">
-                <span class="${getRatingBadgeClass(player.rating_gk)}">${formatRatingValue(player.rating_gk)}</span>
+                <span class="${getRatingBadgeClass(player.rating_gk)}" title="Rating de goleiro: nota de 0 a 10 baseada na média de gols sofridos.">${formatRatingValue(player.rating_gk)}</span>
             </td>
             <td class="px-3 py-2 text-slate-600">${escapeHtml(formatPlayerPositions(player))}</td>
             <td class="px-3 py-2 text-slate-600">${player.goleiro ? 'Linha e goleiro' : 'Linha'}</td>
@@ -302,7 +339,7 @@ function rebuildRemovePlayerOptions() {
     const select = document.getElementById('remove-player-select');
     if (!select) return;
     select.innerHTML = playersAdmin
-        .map(p => `<option value="${p.id}">${p.nome}</option>`)
+        .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nome)}</option>`)
         .join('');
 }
 
@@ -310,7 +347,7 @@ function rebuildEditPlayerOptions() {
     const select = document.getElementById('edit-player-select');
     if (!select) return;
     select.innerHTML = playersAdmin
-        .map(p => `<option value="${p.id}">${p.nome}</option>`)
+        .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nome)}</option>`)
         .join('');
     if (playersAdmin.length > 0) {
         select.value = playersAdmin[0].id;
@@ -321,8 +358,235 @@ function rebuildEditPlayerOptions() {
 function fillSelect(id, options, multiple = false) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.innerHTML = options.map(p => `<option value="${p}">${p}</option>`).join('');
+    el.innerHTML = options.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
     if (multiple) el.setAttribute('multiple', 'multiple');
+}
+
+function rebuildGameAuditOptions() {
+    const names = playersAdmin.map(p => p.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    fillSelect('edit-gk-cinza', names);
+    fillSelect('edit-gk-branco', names);
+    fillSelect('edit-line-cinza', names, true);
+    fillSelect('edit-line-branco', names, true);
+}
+
+function renderGameAudit() {
+    const tbody = document.getElementById('game-audit-body');
+    const searchInput = document.getElementById('game-audit-search');
+    if (!tbody) return;
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    const filtered = gamesAdmin
+        .filter(game => {
+            const haystack = [
+                game.id,
+                game.data,
+                game.cinza?.goleiro,
+                game.branco?.goleiro,
+                ...(game.cinza?.linha || []),
+                ...(game.branco?.linha || [])
+            ].join(' ').toLowerCase();
+            return !query || haystack.includes(query);
+        })
+        .slice()
+        .sort((a, b) => b.id - a.id);
+
+    tbody.innerHTML = filtered.map(game => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-3 py-2 font-semibold text-slate-800">${game.id}</td>
+            <td class="px-3 py-2">${escapeHtml(game.data)}</td>
+            <td class="px-3 py-2">${game.placar?.cinza ?? 0} x ${game.placar?.branco ?? 0}</td>
+            <td class="px-3 py-2 text-slate-600">${escapeHtml(game.cinza?.goleiro || '-')} / ${escapeHtml(game.branco?.goleiro || '-')}</td>
+            <td class="px-3 py-2">
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="game-edit-btn text-xs font-semibold text-blue-700 hover:text-blue-900" data-game-id="${game.id}">Editar</button>
+                    <button type="button" class="game-delete-btn text-xs font-semibold text-red-700 hover:text-red-900" data-game-id="${game.id}">Remover</button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function fillMultiSelect(id, values) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    const set = new Set(values || []);
+    Array.from(select.options).forEach(option => {
+        option.selected = set.has(option.value);
+    });
+}
+
+function openEditGame(game) {
+    const form = document.getElementById('edit-game-form');
+    const statusEl = document.getElementById('edit-game-status');
+    if (!form || !game) return;
+    form.classList.remove('hidden');
+    if (statusEl) statusEl.textContent = '';
+    document.getElementById('edit-game-title').textContent = `Editar jogo ${game.id}`;
+    document.getElementById('edit-game-id').value = game.id;
+    document.getElementById('edit-game-date').value = toIsoDate(game.data);
+    document.getElementById('edit-score-cinza').value = game.placar?.cinza ?? 0;
+    document.getElementById('edit-score-branco').value = game.placar?.branco ?? 0;
+    document.getElementById('edit-gk-cinza').value = game.cinza?.goleiro || '';
+    document.getElementById('edit-gk-branco').value = game.branco?.goleiro || '';
+    fillMultiSelect('edit-line-cinza', game.cinza?.linha || []);
+    fillMultiSelect('edit-line-branco', game.branco?.linha || []);
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeEditGame() {
+    const form = document.getElementById('edit-game-form');
+    if (!form) return;
+    form.classList.add('hidden');
+    form.reset();
+}
+
+function initGameAudit() {
+    const searchInput = document.getElementById('game-audit-search');
+    const tbody = document.getElementById('game-audit-body');
+    const form = document.getElementById('edit-game-form');
+    const cancelBtn = document.getElementById('edit-game-cancel');
+    if (searchInput) searchInput.addEventListener('input', renderGameAudit);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeEditGame);
+
+    if (tbody) {
+        tbody.addEventListener('click', async (event) => {
+            const editBtn = event.target.closest('.game-edit-btn');
+            const deleteBtn = event.target.closest('.game-delete-btn');
+            if (editBtn) {
+                const game = gamesAdmin.find(g => String(g.id) === editBtn.dataset.gameId);
+                openEditGame(game);
+                return;
+            }
+            if (deleteBtn) {
+                const game = gamesAdmin.find(g => String(g.id) === deleteBtn.dataset.gameId);
+                if (!game) return;
+                const ok = window.confirm(`Remover o jogo ${game.id} de ${game.data}?`);
+                if (!ok) return;
+                const { error } = await supabaseClient.from('games').delete().eq('id', game.id);
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                await recomputeRatingsAndUpdate();
+                await loadAdminData();
+                closeEditGame();
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const statusEl = document.getElementById('edit-game-status');
+            if (statusEl) statusEl.textContent = '';
+            const id = document.getElementById('edit-game-id').value;
+            const dateVal = document.getElementById('edit-game-date').value;
+            const scoreC = parseInt(document.getElementById('edit-score-cinza').value, 10) || 0;
+            const scoreB = parseInt(document.getElementById('edit-score-branco').value, 10) || 0;
+            const gkC = document.getElementById('edit-gk-cinza').value;
+            const gkB = document.getElementById('edit-gk-branco').value;
+            const lineC = getSelectedValues('edit-line-cinza');
+            const lineB = getSelectedValues('edit-line-branco');
+            const validationError = validateGamePayload({ dateVal, gkC, gkB, lineC, lineB });
+            if (validationError) {
+                if (statusEl) statusEl.textContent = validationError;
+                return;
+            }
+            const payload = {
+                data: toBrDate(dateVal),
+                cinza: { goleiro: gkC, linha: lineC },
+                branco: { goleiro: gkB, linha: lineB },
+                placar: { cinza: scoreC, branco: scoreB }
+            };
+            const { error } = await supabaseClient.from('games').update(payload).eq('id', id);
+            if (error) {
+                if (statusEl) statusEl.textContent = 'Erro ao salvar jogo.';
+                console.error(error);
+                return;
+            }
+            await recomputeRatingsAndUpdate();
+            await loadAdminData();
+            if (statusEl) statusEl.textContent = 'Jogo atualizado e ratings recalculados.';
+        });
+    }
+}
+
+function downloadTextFile(filename, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+    const text = String(value ?? '');
+    return /[",\r\n;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function gamesToCsv(games) {
+    const rows = [['id', 'data', 'placar_cinza', 'placar_branco', 'goleiro_cinza', 'goleiro_branco', 'linha_cinza', 'linha_branco']];
+    games.forEach(game => {
+        rows.push([
+            game.id,
+            game.data,
+            game.placar?.cinza ?? 0,
+            game.placar?.branco ?? 0,
+            game.cinza?.goleiro || '',
+            game.branco?.goleiro || '',
+            (game.cinza?.linha || []).join('|'),
+            (game.branco?.linha || []).join('|')
+        ]);
+    });
+    return rows.map(row => row.map(csvEscape).join(';')).join('\r\n');
+}
+
+function playersToCsv(players) {
+    const rows = [['id', 'nome', 'posicao', 'posicao_secundaria', 'goleiro', 'rating_linha', 'rating_gk']];
+    players.forEach(player => {
+        rows.push([
+            player.id,
+            player.nome,
+            (player.posicao || []).join('|'),
+            (player.posicao_secundaria || []).join('|'),
+            player.goleiro ? 'true' : 'false',
+            player.rating_linha ?? '',
+            player.rating_gk ?? ''
+        ]);
+    });
+    return rows.map(row => row.map(csvEscape).join(';')).join('\r\n');
+}
+
+function initExportData() {
+    const jsonBtn = document.getElementById('export-json');
+    const gamesBtn = document.getElementById('export-games-csv');
+    const playersBtn = document.getElementById('export-players-csv');
+    const statusEl = document.getElementById('export-status');
+    const stamp = () => new Date().toISOString().slice(0, 10);
+
+    if (jsonBtn) {
+        jsonBtn.addEventListener('click', () => {
+            const payload = { exported_at: new Date().toISOString(), games: gamesAdmin, players: playersAdmin };
+            downloadTextFile(`futstats-backup-${stamp()}.json`, JSON.stringify(payload, null, 2), 'application/json;charset=utf-8');
+            if (statusEl) statusEl.textContent = 'Backup JSON gerado.';
+        });
+    }
+    if (gamesBtn) {
+        gamesBtn.addEventListener('click', () => {
+            downloadTextFile(`futstats-jogos-${stamp()}.csv`, gamesToCsv(gamesAdmin), 'text/csv;charset=utf-8');
+            if (statusEl) statusEl.textContent = 'CSV de jogos gerado.';
+        });
+    }
+    if (playersBtn) {
+        playersBtn.addEventListener('click', () => {
+            downloadTextFile(`futstats-atletas-${stamp()}.csv`, playersToCsv(playersAdmin), 'text/csv;charset=utf-8');
+            if (statusEl) statusEl.textContent = 'CSV de atletas gerado.';
+        });
+    }
 }
 
 function initAddGameForm() {
@@ -337,11 +601,12 @@ function initAddGameForm() {
         const scoreB = parseInt(document.getElementById('add-score-branco').value, 10) || 0;
         const gkC = document.getElementById('add-gk-cinza').value;
         const gkB = document.getElementById('add-gk-branco').value;
-        const lineC = Array.from(document.getElementById('add-line-cinza').selectedOptions).map(o => o.value);
-        const lineB = Array.from(document.getElementById('add-line-branco').selectedOptions).map(o => o.value);
+        const lineC = getSelectedValues('add-line-cinza');
+        const lineB = getSelectedValues('add-line-branco');
 
-        if (!dateVal || lineC.length === 0 || lineB.length === 0) {
-            if (statusEl) statusEl.textContent = 'Preencha data e selecione pelo menos um jogador em cada linha.';
+        const validationError = validateGamePayload({ dateVal, gkC, gkB, lineC, lineB });
+        if (validationError) {
+            if (statusEl) statusEl.textContent = validationError;
             return;
         }
 
@@ -360,8 +625,8 @@ function initAddGameForm() {
             console.error(error);
             return;
         }
-        await loadAdminData();
         await recomputeRatingsAndUpdate();
+        await loadAdminData();
         if (statusEl) statusEl.textContent = 'Jogo salvo e ratings atualizados.';
         form.reset();
     });
@@ -516,6 +781,11 @@ function initEditPlayerForm() {
         const secondaryFiltered = secondary.filter(pos => pos !== primary);
         const ratingLineVal = ratingLine.value !== '' ? parseFloat(ratingLine.value) : null;
         const ratingGkVal = ratingGk.value !== '' ? parseFloat(ratingGk.value) : null;
+        if ((ratingLineVal !== null && (!Number.isFinite(ratingLineVal) || ratingLineVal < 0 || ratingLineVal > 10)) ||
+            (ratingGkVal !== null && (!Number.isFinite(ratingGkVal) || ratingGkVal < 0 || ratingGkVal > 10))) {
+            if (statusEl) statusEl.textContent = 'Ratings precisam estar entre 0 e 10.';
+            return;
+        }
 
         const update = {
             nome,

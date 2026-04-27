@@ -65,6 +65,33 @@ function getDefaultStartIndex(values) {
     return Math.max(values.length - 1, 0);
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function compareByName(a, b) {
+    return String(a.name || a).localeCompare(String(b.name || b), 'pt-BR');
+}
+
+function getResultPoints(result) {
+    return result === 'V' ? 3 : (result === 'E' ? 1 : 0);
+}
+
+function getResultLabel(result) {
+    if (result === 'V') return 'Vitória';
+    if (result === 'E') return 'Empate';
+    return 'Derrota';
+}
+
+function formatPct(value) {
+    return `${value.toFixed(1)}%`;
+}
+
 // --- ESTADO GLOBAL ---
 let originalGames = [];
 let dateValues = [];
@@ -72,6 +99,7 @@ let playerOptions = [];
 let playerProfiles = [];
 let playerProfileMap = {};
 let playerStats = {};
+let dashboardStats = null;
 let gkGlobalAvg = 0;
 let defaultFilterStartDate = '';
 const TEAM_PICKER_EXCLUDE = new Set([
@@ -104,6 +132,7 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
+    initPlayerModal();
     loadFromSupabase();
 });
 
@@ -198,7 +227,7 @@ function rebuildPlayerOptions(games) {
     const renderSelect = (id, multiple=false) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerHTML = playerOptions.map(p => `<option value="${p}">${p}</option>`).join('');
+        el.innerHTML = playerOptions.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
         if (multiple) {
             el.setAttribute('multiple', 'multiple');
         }
@@ -475,7 +504,7 @@ function renderTeamPickerOptions() {
     const currentCinza = gkCinza.value;
     const currentBranco = gkBranco.value;
     const teamPickerOptions = playerOptions.filter(p => !TEAM_PICKER_EXCLUDE.has(p));
-    const optionsHtml = teamPickerOptions.map(p => `<option value="${p}">${p}</option>`).join('');
+    const optionsHtml = teamPickerOptions.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
 
     gkCinza.innerHTML = optionsHtml;
     gkBranco.innerHTML = optionsHtml;
@@ -485,10 +514,10 @@ function renderTeamPickerOptions() {
     list.innerHTML = teamPickerOptions.map((p, idx) => `
         <label class="flex items-center justify-between gap-2 text-xs bg-white border border-slate-200 rounded px-2 py-1">
             <span class="flex items-center gap-2">
-                <input id="team-player-${idx}" type="checkbox" name="team-player" value="${p}" class="rounded border-slate-300">
-                <span>${p}</span>
+                <input id="team-player-${idx}" type="checkbox" name="team-player" value="${escapeHtml(p)}" class="rounded border-slate-300">
+                <span>${escapeHtml(p)}</span>
             </span>
-            <span class="player-rating" style="${getRatingStyle(p)}">R ${formatLineRating(p)}</span>
+            <span class="player-rating" title="Rating de linha: combina hist&oacute;rico de pontos por jogo e peso maior para jogos recentes." style="${getRatingStyle(p)}">R ${formatLineRating(p)}</span>
         </label>
     `).join('');
 
@@ -513,15 +542,15 @@ function renderTeamPickerResults() {
         const selected = isSelected ? 'team-chip--selected' : '';
         const badge = getPositionBadgeInfo(name);
         const badgeHtml = badge ? `<span class="team-chip-badge ${badge.className}">${badge.code}</span>` : '';
-        return `<button type="button" data-team="${team}" data-player="${name}" class="${base} ${selected}">${label}${badgeHtml}</button>`;
+        return `<button type="button" data-team="${team}" data-player="${escapeHtml(name)}" class="${base} ${selected}">${escapeHtml(label)}${badgeHtml}</button>`;
     };
 
     const renderPitch = (team, label, gkName, players) => `
         <div class="border border-slate-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-slate-700 mb-2">${label}</p>
+            <p class="text-sm font-semibold text-slate-700 mb-2">${escapeHtml(label)}</p>
             <div class="team-pitch team-pitch--${team}">
                 <div class="team-pitch-goal">
-                    <span class="team-chip team-chip--gk">1 - ${gkName}<span class="team-chip-badge team-chip-badge--gk">GL</span></span>
+                    <span class="team-chip team-chip--gk">1 - ${escapeHtml(gkName)}<span class="team-chip-badge team-chip-badge--gk">GL</span></span>
                 </div>
                 <div class="team-pitch-line">
                     ${sortPlayersByPosition(players).map((p, idx) => renderChip(team, p, `${idx + 2} - ${p}`)).join('')}
@@ -1206,28 +1235,28 @@ function applyFilter() {
 }
 
 // --- PROCESSAMENTO E RENDERIZAÇÃO ---
-function processData(games) {
-    if (!Array.isArray(games) || games.length === 0) {
-        document.getElementById('kpis-container').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo no período selecionado.</p>';
-        document.getElementById('team-stats-container').innerHTML = '';
-        document.getElementById('ranking-body').innerHTML = '';
-        document.getElementById('gk-body').innerHTML = '';
-        document.getElementById('line-body').innerHTML = '';
-        document.getElementById('duo-body').innerHTML = '';
-        document.getElementById('duo-worst-body').innerHTML = '';
-        document.getElementById('game-select').innerHTML = '';
-        document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
-        document.getElementById('streaks-container').innerHTML = '';
-        return;
-    }
+function createEmptyPlayerStats(name) {
+    return {
+        name,
+        matches: 0, wins: 0, losses: 0, draws: 0, points: 0,
+        gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0, gkPoints: 0, gkLastDate: '',
+        lineMatches: 0, linePoints: 0,
+        lastResults: [],
+        history: [],
+        currentUnbeaten: 0, bestUnbeaten: 0,
+        currentWin: 0, bestWin: 0,
+        currentNoWin: 0
+    };
+}
 
+function buildDashboardStats(games) {
     const orderedGames = [...games].sort((a, b) => a.id - b.id);
-    let players = {};
-    let teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
+    const players = {};
+    const teamStats = { cinza: { w:0, l:0, d:0, g:0 }, branco: { w:0, l:0, d:0, g:0 } };
+    const duos = {};
     let totalGoals = 0;
     let maxGoalsGame = { val: 0, desc: '' };
     let maxDiffGame = { val: 0, desc: '' };
-    let duos = {};
 
     orderedGames.forEach(game => {
         const golsC = game.placar.cinza;
@@ -1249,25 +1278,27 @@ function processData(games) {
 
         const processPlayer = (name, team, pos, result, gp, gc) => {
             const pName = standardize(name);
-            if (!players[pName]) players[pName] = {
-                name: pName,
-                matches: 0, wins: 0, losses: 0, draws: 0, points: 0,
-                gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0, gkPoints: 0, gkLastDate: '',
-                lineMatches: 0, linePoints: 0,
-                lastResults: [],
-                currentUnbeaten: 0, bestUnbeaten: 0,
-                currentWin: 0, bestWin: 0,
-                currentNoWin: 0
-            };
+            if (!players[pName]) players[pName] = createEmptyPlayerStats(pName);
 
             const p = players[pName];
             p.matches++;
-            if (result === 'V') { p.wins++; p.points += 3; }
-            if (result === 'D') { p.losses++; }
-            if (result === 'E') { p.draws++; p.points += 1; }
+            p.points += getResultPoints(result);
+            if (result === 'V') p.wins++;
+            if (result === 'D') p.losses++;
+            if (result === 'E') p.draws++;
             p.lastResults.push(result);
+            p.history.push({
+                id: game.id,
+                date: game.data,
+                team,
+                pos,
+                result,
+                points: getResultPoints(result),
+                score: `${golsC}x${golsB}`,
+                goalsFor: gp,
+                goalsAgainst: gc
+            });
 
-            // streaks
             if (result === 'V' || result === 'E') {
                 p.currentUnbeaten++;
                 if (p.currentUnbeaten > p.bestUnbeaten) p.bestUnbeaten = p.currentUnbeaten;
@@ -1280,11 +1311,7 @@ function processData(games) {
             } else {
                 p.currentWin = 0;
             }
-            if (result !== 'V') {
-                p.currentNoWin++;
-            } else {
-                p.currentNoWin = 0;
-            }
+            p.currentNoWin = result !== 'V' ? p.currentNoWin + 1 : 0;
 
             if (pos === 'Goleiro') {
                 p.gkMatches++;
@@ -1293,17 +1320,17 @@ function processData(games) {
                 if (result === 'V') p.gkWins++;
                 if (result === 'E') p.gkDraws++;
                 if (result === 'D') p.gkLosses++;
-                p.gkPoints += (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
+                p.gkPoints += getResultPoints(result);
                 p.gkLastDate = game.data;
             } else {
                 p.lineMatches++;
-                p.linePoints += (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
+                p.linePoints += getResultPoints(result);
             }
         };
 
         const processDuos = (lineArray, result) => {
-            const stdNames = lineArray.map(n => standardize(n)).sort();
-            const pts = (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
+            const stdNames = lineArray.map(n => standardize(n)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            const pts = getResultPoints(result);
             for (let i = 0; i < stdNames.length; i++) {
                 for (let j = i + 1; j < stdNames.length; j++) {
                     const key = `${stdNames[i]} + ${stdNames[j]}`;
@@ -1324,6 +1351,109 @@ function processData(games) {
     });
 
     const playersArr = Object.values(players);
+    return { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos };
+}
+
+function getOverallRanking(playersArr) {
+    return [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins || compareByName(a, b));
+}
+
+function getGoalkeeperRanking(playersArr) {
+    return playersArr
+        .filter(p => p.gkMatches > 0)
+        .sort((a,b) => {
+            const avgA = a.gkGoals / a.gkMatches;
+            const avgB = b.gkGoals / b.gkMatches;
+            return b.gkPoints - a.gkPoints || avgA - avgB || compareByName(a, b);
+        });
+}
+
+function getLineRanking(playersArr) {
+    return playersArr
+        .filter(p => p.lineMatches >= 10)
+        .sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches) || compareByName(a, b));
+}
+
+function initPlayerModal() {
+    const modal = document.getElementById('player-modal');
+    const overlay = document.getElementById('player-modal-overlay');
+    const closeBtn = document.getElementById('player-modal-close');
+    if (!modal) return;
+
+    const close = () => modal.classList.add('hidden');
+    if (overlay) overlay.addEventListener('click', close);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest('.player-detail-link');
+        if (!btn) return;
+        showPlayerModal(btn.dataset.player);
+    });
+}
+
+function renderModalKpi(label, value) {
+    return `
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <p class="text-xs uppercase text-slate-500 font-semibold">${label}</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${value}</p>
+        </div>
+    `;
+}
+
+function showPlayerModal(name) {
+    if (!dashboardStats || !name) return;
+    const player = dashboardStats.players[name];
+    if (!player) return;
+
+    const modal = document.getElementById('player-modal');
+    const title = document.getElementById('player-modal-title');
+    const summary = document.getElementById('player-modal-summary');
+    const kpis = document.getElementById('player-modal-kpis');
+    const history = document.getElementById('player-modal-history');
+    if (!modal || !title || !summary || !kpis || !history) return;
+
+    const linePpg = player.lineMatches > 0 ? (player.linePoints / player.lineMatches).toFixed(2) : '-';
+    const gkAvg = player.gkMatches > 0 ? (player.gkGoals / player.gkMatches).toFixed(2) : '-';
+    title.textContent = player.name;
+    summary.textContent = `${player.matches} jogos no período selecionado. ${player.wins}V / ${player.draws}E / ${player.losses}D.`;
+    kpis.innerHTML = [
+        renderModalKpi('Pontos', player.points),
+        renderModalKpi('Linha PPG', linePpg),
+        renderModalKpi('Jogos como goleiro', player.gkMatches),
+        renderModalKpi('Média gols sofridos', gkAvg)
+    ].join('');
+    history.innerHTML = player.history.slice().reverse().map(item => `
+        <tr class="hover:bg-slate-50">
+            <td class="px-3 py-2">${item.id}</td>
+            <td class="px-3 py-2">${escapeHtml(item.date)}</td>
+            <td class="px-3 py-2">${escapeHtml(item.pos)}</td>
+            <td class="px-3 py-2">${escapeHtml(item.team)}</td>
+            <td class="px-3 py-2 font-semibold">${escapeHtml(getResultLabel(item.result))}</td>
+            <td class="px-3 py-2">${escapeHtml(item.score)}</td>
+            <td class="px-3 py-2">${item.goalsAgainst}</td>
+        </tr>
+    `).join('');
+    modal.classList.remove('hidden');
+}
+
+function processData(games) {
+    if (!Array.isArray(games) || games.length === 0) {
+        dashboardStats = null;
+        document.getElementById('kpis-container').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo no período selecionado.</p>';
+        document.getElementById('team-stats-container').innerHTML = '';
+        document.getElementById('ranking-body').innerHTML = '';
+        document.getElementById('gk-body').innerHTML = '';
+        document.getElementById('line-body').innerHTML = '';
+        document.getElementById('duo-body').innerHTML = '';
+        document.getElementById('duo-worst-body').innerHTML = '';
+        document.getElementById('game-select').innerHTML = '';
+        document.getElementById('game-score').innerHTML = '<p class="text-sm text-slate-500">Nenhum jogo disponível para exibir.</p>';
+        document.getElementById('streaks-container').innerHTML = '';
+        return;
+    }
+
+    dashboardStats = buildDashboardStats(games);
+    const { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos } = dashboardStats;
 
     // KPIs
     document.getElementById('kpis-container').innerHTML = `
@@ -1339,12 +1469,12 @@ function processData(games) {
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h4 class="text-xs font-bold text-slate-400 uppercase">Jogo + Movimentado</h4>
             <p class="text-xl font-bold text-slate-800 mt-1">${maxGoalsGame.val} Gols</p>
-            <p class="text-xs text-slate-500 mt-1">${maxGoalsGame.desc}</p>
+            <p class="text-xs text-slate-500 mt-1">${escapeHtml(maxGoalsGame.desc)}</p>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h4 class="text-xs font-bold text-slate-400 uppercase">Maior Goleada</h4>
             <p class="text-xl font-bold text-slate-800 mt-1">${maxDiffGame.val} Gols Dif.</p>
-            <p class="text-xs text-slate-500 mt-1">${maxDiffGame.desc}</p>
+            <p class="text-xs text-slate-500 mt-1">${escapeHtml(maxDiffGame.desc)}</p>
         </div>
     `;
     document.getElementById('last-update').innerText = `Atualizado: ${new Date().toLocaleDateString()}`;
@@ -1372,10 +1502,12 @@ function processData(games) {
     };
 
     // Ranking
-    const sortedRanking = [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins);
+    const sortedRanking = getOverallRanking(playersArr);
     document.getElementById('ranking-body').innerHTML = sortedRanking.map(p => `
         <tr class="hover:bg-slate-50 transition">
-            <td class="px-6 py-3 whitespace-nowrap font-medium text-slate-700">${p.name}</td>
+            <td class="px-6 py-3 whitespace-nowrap font-medium text-slate-700">
+                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
+            </td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-500">${p.matches}</td>
             <td class="px-6 py-3 whitespace-nowrap text-green-600 font-bold">${p.wins}</td>
             <td class="px-6 py-3 whitespace-nowrap text-red-500">${p.losses}</td>
@@ -1386,20 +1518,18 @@ function processData(games) {
     `).join('');
 
     // Goleiros
-    const gkArr = playersArr
-        .filter(p => p.gkMatches > 0)
-        .sort((a,b) => {
-            const avgA = a.gkGoals / a.gkMatches;
-            const avgB = b.gkGoals / b.gkMatches;
-            return b.gkPoints - a.gkPoints || avgA - avgB || a.name.localeCompare(b.name, 'pt-BR');
-        });
+    const gkArr = getGoalkeeperRanking(playersArr);
     document.getElementById('gk-body').innerHTML = gkArr.map((p, idx) => {
         const media = (p.gkGoals / p.gkMatches).toFixed(2);
+        const aproveitamento = formatPct((p.gkPoints / (p.gkMatches * 3)) * 100);
         return `
         <tr class="hover:bg-slate-50">
             <td class="px-4 py-2 font-bold text-slate-700">${idx + 1}</td>
-            <td class="px-4 py-2 font-medium">${p.name}</td>
+            <td class="px-4 py-2 font-medium">
+                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
+            </td>
             <td class="px-4 py-2 font-bold text-blue-600">${p.gkPoints}</td>
+            <td class="px-4 py-2 text-xs text-slate-500">${aproveitamento}</td>
             <td class="px-4 py-2">${p.gkMatches}</td>
             <td class="px-4 py-2">${p.gkGoals}</td>
             <td class="px-4 py-2">${p.gkWins}V / ${p.gkDraws}E / ${p.gkLosses}D</td>
@@ -1410,13 +1540,15 @@ function processData(games) {
     }).join('');
 
     // Linha
-    const lineArr = playersArr.filter(p => p.lineMatches >= 10).sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches));
+    const lineArr = getLineRanking(playersArr);
     document.getElementById('line-body').innerHTML = lineArr.map(p => `
         <tr class="hover:bg-slate-50">
-            <td class="px-4 py-2 font-medium">${p.name}</td>
+            <td class="px-4 py-2 font-medium">
+                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
+            </td>
             <td class="px-4 py-2">${p.lineMatches}</td>
             <td class="px-4 py-2 font-bold text-blue-600">${(p.linePoints / p.lineMatches).toFixed(2)}</td>
-            <td class="px-4 py-2 text-xs text-slate-500">${((p.linePoints / (p.lineMatches*3))*100).toFixed(1)}%</td>
+            <td class="px-4 py-2 text-xs text-slate-500">${formatPct((p.linePoints / (p.lineMatches*3))*100)}</td>
         </tr>
     `).join('');
 
@@ -1429,14 +1561,14 @@ function processData(games) {
 
     document.getElementById('duo-body').innerHTML = bestDuos.map(d => `
         <tr>
-            <td class="px-6 py-3 font-medium text-slate-700">${d.name}</td>
+            <td class="px-6 py-3 font-medium text-slate-700">${escapeHtml(d.name)}</td>
             <td class="px-6 py-3 text-slate-500">${d.games}</td>
             <td class="px-6 py-3 font-bold text-green-600">${d.ppg.toFixed(2)}</td>
         </tr>
     `).join('');
     document.getElementById('duo-worst-body').innerHTML = worstDuos.map(d => `
         <tr>
-            <td class="px-6 py-3 font-medium text-slate-700">${d.name}</td>
+            <td class="px-6 py-3 font-medium text-slate-700">${escapeHtml(d.name)}</td>
             <td class="px-6 py-3 text-slate-500">${d.games}</td>
             <td class="px-6 py-3 font-bold text-red-600">${d.ppg.toFixed(2)}</td>
         </tr>
@@ -1445,17 +1577,17 @@ function processData(games) {
     // Últimos jogos
     const gamesById = [...orderedGames];
     const gameSelect = document.getElementById('game-select');
-    gameSelect.innerHTML = gamesById.slice().reverse().map(g => `<option value="${g.id}">Jogo ${g.id} - ${g.data} (${g.placar.cinza}x${g.placar.branco})</option>`).join('');
+    gameSelect.innerHTML = gamesById.slice().reverse().map(g => `<option value="${g.id}">Jogo ${g.id} - ${escapeHtml(g.data)} (${g.placar.cinza}x${g.placar.branco})</option>`).join('');
 
     const renderTeamCard = (team, label, colors) => `
         <div class="rounded-lg p-4 border" style="background:${colors.bg}; border-color:${colors.border};">
             <div class="flex items-center justify-between mb-2">
                 <p class="text-sm font-semibold" style="color:${colors.text};">${label}</p>
-                <span class="text-xs bg-white px-2 py-1 rounded border" style="color:${colors.text}; border-color:${colors.border};">Goleiro: ${standardize(team.goleiro)}</span>
+                <span class="text-xs bg-white px-2 py-1 rounded border" style="color:${colors.text}; border-color:${colors.border};">Goleiro: ${escapeHtml(standardize(team.goleiro))}</span>
             </div>
             <p class="text-xs uppercase mb-1" style="color:${colors.muted};">Linha</p>
             <div class="flex flex-wrap gap-2 text-sm">
-                ${team.linha.map(p => `<span class="px-2 py-1 bg-white border rounded" style="border-color:${colors.border};">${standardize(p)}</span>`).join('')}
+                ${team.linha.map(p => `<span class="px-2 py-1 bg-white border rounded" style="border-color:${colors.border};">${escapeHtml(standardize(p))}</span>`).join('')}
             </div>
         </div>
     `;
@@ -1463,7 +1595,7 @@ function processData(games) {
     const renderGame = (game) => {
         document.getElementById('game-score').innerHTML = `
             <div class="flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-4">
-                <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${game.data}</p>
+                <p class="text-xs uppercase text-slate-500">Jogo ${game.id} - ${escapeHtml(game.data)}</p>
                 <p class="text-2xl font-bold text-slate-800 my-2"><span class="text-slate-500">Cinza</span> ${game.placar.cinza} x ${game.placar.branco} <span class="text-amber-600">Branco</span></p>
                 <p class="text-sm text-slate-500">Resultado mais recente</p>
             </div>
@@ -1491,17 +1623,17 @@ function processData(games) {
     document.getElementById('streaks-container').innerHTML = `
         <div class="bg-white border border-slate-200 rounded-lg p-4">
             <p class="text-xs uppercase text-slate-500 font-semibold">Maior Invencibilidade</p>
-            <p class="text-lg font-bold text-slate-800 mt-1">${unbeatenLeader ? unbeatenLeader.name : '-'}</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${unbeatenLeader ? escapeHtml(unbeatenLeader.name) : '-'}</p>
             <p class="text-sm text-slate-500">${unbeatenLeader ? `${unbeatenLeader.bestUnbeaten} jogos sem perder` : 'Sem dados'}</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
             <p class="text-xs uppercase text-slate-500 font-semibold">Maior Sequ\u00eancia de Vit\u00f3rias</p>
-            <p class="text-lg font-bold text-slate-800 mt-1">${winLeader ? winLeader.name : '-'}</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${winLeader ? escapeHtml(winLeader.name) : '-'}</p>
             <p class="text-sm text-slate-500">${winLeader ? `${winLeader.bestWin} vit\u00f3rias seguidas` : 'Sem dados'}</p>
         </div>
         <div class="bg-white border border-slate-200 rounded-lg p-4">
             <p class="text-xs uppercase text-slate-500 font-semibold">Seca de Vit\u00f3rias</p>
-            <p class="text-lg font-bold text-slate-800 mt-1">${droughtLeader ? droughtLeader.name : '-'}</p>
+            <p class="text-lg font-bold text-slate-800 mt-1">${droughtLeader ? escapeHtml(droughtLeader.name) : '-'}</p>
             <p class="text-sm text-slate-500">${droughtLeader ? `${droughtLeader.currentNoWin} jogos sem vencer` : 'Sem dados'}</p>
         </div>
     `;

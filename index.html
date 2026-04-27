@@ -95,7 +95,10 @@
         <!-- Tabela Principal: Ranking Geral -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8 overflow-hidden">
             <div class="p-6 bg-white border-b border-slate-200 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800">📊 Ranking Geral da Temporada</h3>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800">📊 Ranking Geral da Temporada</h3>
+                    <p class="text-xs text-slate-500 mt-1">Crit&eacute;rio: pontos totais, vit&oacute;rias e ordem alfab&eacute;tica.</p>
+                </div>
                 <span class="text-xs text-slate-500 italic">* Clique nos títulos para ordenar</span>
             </div>
             <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
@@ -125,6 +128,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
                     <h3 class="font-bold text-slate-700">🧱 Muralha (Goleiros)</h3>
+                    <p class="text-xs text-slate-500 mt-1">Crit&eacute;rio: pontos como goleiro. Desempate: menor m&eacute;dia de gols sofridos.</p>
                 </div>
                 <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
                     <table class="min-w-full divide-y divide-slate-200" id="gk-table">
@@ -133,11 +137,12 @@
                                 <th onclick="sortTable('gk-table', 0)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">#</th>
                                 <th onclick="sortTable('gk-table', 1)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Nome</th>
                                 <th onclick="sortTable('gk-table', 2)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Pontos</th>
-                                <th onclick="sortTable('gk-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
-                                <th onclick="sortTable('gk-table', 4)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Gols Sofridos</th>
-                                <th onclick="sortTable('gk-table', 5)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">V/E/D</th>
-                                <th onclick="sortTable('gk-table', 6)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">M&eacute;dia Gols/Jogo</th>
-                                <th onclick="sortTable('gk-table', 7)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">&Uacute;ltima atua&ccedil;&atilde;o</th>
+                                <th onclick="sortTable('gk-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">% Aprov.</th>
+                                <th onclick="sortTable('gk-table', 4)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
+                                <th onclick="sortTable('gk-table', 5)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Gols Sofridos</th>
+                                <th onclick="sortTable('gk-table', 6)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">V/E/D</th>
+                                <th onclick="sortTable('gk-table', 7)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">M&eacute;dia Gols/Jogo</th>
+                                <th onclick="sortTable('gk-table', 8)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">&Uacute;ltima atua&ccedil;&atilde;o</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-sm" id="gk-body"></tbody>
@@ -148,7 +153,8 @@
             <!-- Jogadores de Linha -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h3 class="font-bold text-slate-700">⚡ Eficiência Linha (>4 Jogos)</h3>
+                    <h3 class="font-bold text-slate-700">⚡ Eficiência Linha (mín. 10 jogos)</h3>
+                    <p class="text-xs text-slate-500 mt-1">Crit&eacute;rio: pontos por jogo como jogador de linha.</p>
                 </div>
                 <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
                     <table class="min-w-full divide-y divide-slate-200" id="line-table">
@@ -170,6 +176,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 class="font-bold text-lg mb-4">🤝 Sinergia (Melhores Duplas)</h3>
+                <p class="text-xs text-slate-500 mb-3">Crit&eacute;rio: pontos por jogo em duplas com pelo menos 4 jogos.</p>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200" id="duo-table">
                         <thead class="bg-slate-50">
@@ -186,6 +193,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h3 class="font-bold text-lg mb-4">Baixa Sinergia (Piores Duplas)</h3>
+                <p class="text-xs text-slate-500 mb-3">Crit&eacute;rio: menor pontos por jogo em duplas com pelo menos 4 jogos.</p>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200" id="duo-worst-table">
                         <thead class="bg-slate-50">
@@ -206,6 +214,36 @@
     <footer class="bg-white border-t mt-12 py-8 text-center text-slate-500 text-sm">
         <p>Dashboard atualizado automaticamente via GitHub Pages.</p>
     </footer>
+
+    <div id="player-modal" class="fixed inset-0 z-50 hidden">
+        <div id="player-modal-overlay" class="absolute inset-0 bg-slate-900/60"></div>
+        <div class="relative max-w-4xl mx-auto mt-10 bg-white rounded-xl shadow-xl border border-slate-200 p-6 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-start justify-between gap-4 mb-5">
+                <div>
+                    <h2 id="player-modal-title" class="text-xl font-bold text-slate-800">Atleta</h2>
+                    <p id="player-modal-summary" class="text-xs text-slate-500 mt-1"></p>
+                </div>
+                <button id="player-modal-close" type="button" class="text-slate-500 hover:text-slate-800 text-xl leading-none">&times;</button>
+            </div>
+            <div id="player-modal-kpis" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="px-3 py-2 text-left font-semibold">Jogo</th>
+                            <th class="px-3 py-2 text-left font-semibold">Data</th>
+                            <th class="px-3 py-2 text-left font-semibold">Fun&ccedil;&atilde;o</th>
+                            <th class="px-3 py-2 text-left font-semibold">Time</th>
+                            <th class="px-3 py-2 text-left font-semibold">Resultado</th>
+                            <th class="px-3 py-2 text-left font-semibold">Placar</th>
+                            <th class="px-3 py-2 text-left font-semibold">Gols contra</th>
+                        </tr>
+                    </thead>
+                    <tbody id="player-modal-history" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <div id="team-picker-modal" class="fixed inset-0 z-50 hidden">
         <div id="team-picker-overlay" class="absolute inset-0 bg-slate-900/60"></div>

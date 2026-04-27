@@ -46,7 +46,7 @@
         <p id="recompute-status" class="text-xs text-amber-600 mb-6"></p>
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8">
             <h2 class="text-sm font-semibold text-slate-700 mb-4">A&ccedil;&otilde;es</h2>
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
                 <button type="button" class="admin-action-btn" data-admin-section="admin-games">
                     <span class="text-xl">⚽</span>
                     <span class="text-xs font-semibold">Cadastrar jogo</span>
@@ -66,6 +66,14 @@
                 <button type="button" class="admin-action-btn" data-admin-section="admin-ratings">
                     <span class="text-xl">📊</span>
                     <span class="text-xs font-semibold">Ratings</span>
+                </button>
+                <button type="button" class="admin-action-btn" data-admin-section="admin-game-audit">
+                    <span class="text-xl">📋</span>
+                    <span class="text-xs font-semibold">Auditar jogos</span>
+                </button>
+                <button type="button" class="admin-action-btn" data-admin-section="admin-export-data">
+                    <span class="text-xl">⬇️</span>
+                    <span class="text-xs font-semibold">Exportar</span>
                 </button>
                 <button type="button" class="admin-action-btn" data-admin-section="admin-filter-settings">
                     <span class="text-xl">🗓️</span>
@@ -243,6 +251,7 @@
                 <div>
                     <h2 class="text-lg font-bold text-slate-800">Ratings dos atletas</h2>
                     <p id="ratings-summary" class="text-xs text-slate-500 mt-1"></p>
+                    <p class="text-xs text-slate-500 mt-1" title="Linha usa pontos por jogo com peso maior para jogos recentes. Goleiro usa média de gols sofridos.">Passe o mouse aqui para ver como os ratings s&atilde;o calculados.</p>
                 </div>
                 <label class="text-xs font-semibold text-slate-500 md:w-64">
                     Buscar atleta
@@ -264,6 +273,80 @@
                 </table>
             </div>
             <p id="ratings-empty" class="hidden text-xs text-slate-500 mt-3">Nenhum atleta encontrado.</p>
+        </section>
+
+        <section id="admin-game-audit" class="admin-section bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8 hidden">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Auditoria de jogos</h2>
+                    <p class="text-xs text-slate-500 mt-1">Edite ou remova jogos j&aacute; cadastrados.</p>
+                </div>
+                <label class="text-xs font-semibold text-slate-500 md:w-64">
+                    Buscar por data ou goleiro
+                    <input id="game-audit-search" type="search" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm" placeholder="Ex.: 12/03 ou Daniel">
+                </label>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-lg mb-5">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                        <tr>
+                            <th class="text-left font-semibold px-3 py-2">Jogo</th>
+                            <th class="text-left font-semibold px-3 py-2">Data</th>
+                            <th class="text-left font-semibold px-3 py-2">Placar</th>
+                            <th class="text-left font-semibold px-3 py-2">Goleiros</th>
+                            <th class="text-left font-semibold px-3 py-2">A&ccedil;&otilde;es</th>
+                        </tr>
+                    </thead>
+                    <tbody id="game-audit-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+            <form id="edit-game-form" class="hidden border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <h3 id="edit-game-title" class="text-sm font-bold text-slate-800">Editar jogo</h3>
+                    <button id="edit-game-cancel" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-900">Cancelar</button>
+                </div>
+                <input id="edit-game-id" type="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label class="text-xs font-semibold text-slate-500">Data
+                        <input id="edit-game-date" type="date" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="text-xs font-semibold text-slate-500">Placar Cinza
+                            <input id="edit-score-cinza" type="number" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                        </label>
+                        <label class="text-xs font-semibold text-slate-500">Placar Branco
+                            <input id="edit-score-branco" type="number" min="0" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
+                        </label>
+                    </div>
+                    <label class="text-xs font-semibold text-slate-500">Goleiro Cinza
+                        <select id="edit-gk-cinza" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="text-xs font-semibold text-slate-500">Goleiro Branco
+                        <select id="edit-gk-branco" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="text-xs font-semibold text-slate-500">Linha Cinza
+                        <select id="edit-line-cinza" multiple size="8" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                    <label class="text-xs font-semibold text-slate-500">Linha Branco
+                        <select id="edit-line-branco" multiple size="8" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm"></select>
+                    </label>
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button type="submit" class="bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-emerald-700">Salvar jogo</button>
+                </div>
+                <p id="edit-game-status" class="text-xs text-amber-600 mt-2"></p>
+            </form>
+        </section>
+
+        <section id="admin-export-data" class="admin-section bg-white border border-slate-200 rounded-xl shadow-sm p-5 mb-8 hidden">
+            <h2 class="text-lg font-bold text-slate-800 mb-2">Exportar dados</h2>
+            <p class="text-xs text-slate-500 mb-4">Gere backups locais dos jogos e atletas carregados do Supabase.</p>
+            <div class="flex flex-wrap gap-2">
+                <button id="export-json" type="button" class="bg-blue-600 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-blue-700">Baixar JSON</button>
+                <button id="export-games-csv" type="button" class="bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-slate-800">Baixar jogos CSV</button>
+                <button id="export-players-csv" type="button" class="bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded hover:bg-slate-800">Baixar atletas CSV</button>
+            </div>
+            <p id="export-status" class="text-xs text-amber-600 mt-3"></p>
         </section>
 
         <section id="admin-filter-settings" class="admin-section bg-white border border-slate-200 rounded-xl shadow-sm p-5 hidden">
