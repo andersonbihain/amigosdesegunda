@@ -1476,15 +1476,19 @@ function getGoalkeeperRanking(playersArr, minMatches = 1) {
 }
 
 function getPlayerCurrentFormText(player) {
-    if (player.currentWin > 1) return `${player.currentWin} vitórias seguidas`;
-    if (player.currentWin === 1) return 'Venceu o último jogo';
-    if (player.currentNoWin > 1) return `Sem vencer há ${player.currentNoWin} jogos`;
-    if (player.currentUnbeaten > 1) return `Invicto há ${player.currentUnbeaten} jogos`;
+    const last = player.lastResults[player.lastResults.length - 1];
+    if (last === 'V') {
+        return player.currentWin > 1 ? `${player.currentWin} vitórias seguidas` : 'Ganhou a última';
+    }
+    if (last === 'D') return 'Perdeu a última';
+    if (last === 'E') {
+        return player.currentUnbeaten > 1 ? `Invicto há ${player.currentUnbeaten} jogos` : 'Empatou a última';
+    }
     return 'Forma recente neutra';
 }
 
-function renderRecentForm(results) {
-    const last = results.slice(-5);
+function renderRecentForm(results, limit = 5) {
+    const last = results.slice(-limit);
     if (last.length === 0) return '';
     const dots = last.map(r => {
         const color = r === 'V' ? 'bg-green-500' : (r === 'E' ? 'bg-slate-400' : 'bg-red-500');
@@ -1575,10 +1579,12 @@ function showPlayerModal(name) {
     const lastGame = player.history[player.history.length - 1];
     const lineRecord = countHistoryByRole(player.history, 'Linha');
     const gkRecord = countHistoryByRole(player.history, 'Goleiro');
+    const rankingPosition = getOverallRanking(dashboardStats.playersArr).findIndex(p => p.name === player.name) + 1;
 
     title.textContent = player.name;
     summary.textContent = `${player.matches} jogos no período selecionado. ${player.wins}V / ${player.draws}E / ${player.losses}D.`;
     kpis.innerHTML = [
+        renderModalKpi('Ranking geral', rankingPosition > 0 ? `#${rankingPosition}` : '-'),
         renderModalKpi('Aproveitamento', formatPct(totalPct)),
         renderModalKpi('Rating linha', lineRating),
         renderModalKpi('Rating goleiro', gkRating),
@@ -1590,9 +1596,9 @@ function showPlayerModal(name) {
         renderPerformanceBar('Goleiro', gkPct, gkRecord.matches > 0 ? `${getRecordText(gkRecord.wins, gkRecord.draws, gkRecord.losses)}. Média sofrida: ${gkAvg}` : 'Sem jogos como goleiro no período', 'bg-amber-500')
     ].join('');
     insights.innerHTML = [
-        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Forma atual</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(getPlayerCurrentFormText(player))}</p></div>`,
-        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Sequências</p><p class="text-slate-700 mt-1">Melhor invencibilidade: <strong>${player.bestUnbeaten}</strong>. Melhor sequência de vitórias: <strong>${player.bestWin}</strong>.</p></div>`,
-        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Últimos 5</p><div class="mt-2">${renderRecentForm(player.lastResults)}</div></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Fase atual</p><p class="font-bold text-slate-800 mt-1">${escapeHtml(getPlayerCurrentFormText(player))}</p></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Melhor sequência</p><p class="text-slate-700 mt-1">Melhor sequência de vitórias: <strong>${player.bestWin}</strong>.</p></div>`,
+        `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Últimos 10</p><div class="mt-2">${renderRecentForm(player.lastResults, 10)}</div></div>`,
         `<div class="bg-slate-50 border border-slate-200 rounded-lg p-3"><p class="text-xs uppercase text-slate-500 font-semibold">Uso</p><p class="text-slate-700 mt-1">${player.lineMatches} jogos na linha e ${player.gkMatches} como goleiro.</p></div>`
     ].join('');
     modal.classList.remove('hidden');
