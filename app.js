@@ -1252,7 +1252,7 @@ function processData(games) {
             if (!players[pName]) players[pName] = {
                 name: pName,
                 matches: 0, wins: 0, losses: 0, draws: 0, points: 0,
-                gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0,
+                gkMatches: 0, gkGoals: 0, gkWorst: 0, gkWins: 0, gkDraws: 0, gkLosses: 0, gkPoints: 0, gkLastDate: '',
                 lineMatches: 0, linePoints: 0,
                 lastResults: [],
                 currentUnbeaten: 0, bestUnbeaten: 0,
@@ -1293,6 +1293,8 @@ function processData(games) {
                 if (result === 'V') p.gkWins++;
                 if (result === 'E') p.gkDraws++;
                 if (result === 'D') p.gkLosses++;
+                p.gkPoints += (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
+                p.gkLastDate = game.data;
             } else {
                 p.lineMatches++;
                 p.linePoints += (result === 'V' ? 3 : (result === 'E' ? 1 : 0));
@@ -1384,16 +1386,25 @@ function processData(games) {
     `).join('');
 
     // Goleiros
-    const gkArr = playersArr.filter(p => p.gkMatches > 0).sort((a,b) => (a.gkGoals/a.gkMatches) - (b.gkGoals/b.gkMatches));
-    document.getElementById('gk-body').innerHTML = gkArr.map(p => {
+    const gkArr = playersArr
+        .filter(p => p.gkMatches > 0)
+        .sort((a,b) => {
+            const avgA = a.gkGoals / a.gkMatches;
+            const avgB = b.gkGoals / b.gkMatches;
+            return b.gkPoints - a.gkPoints || avgA - avgB || a.name.localeCompare(b.name, 'pt-BR');
+        });
+    document.getElementById('gk-body').innerHTML = gkArr.map((p, idx) => {
         const media = (p.gkGoals / p.gkMatches).toFixed(2);
         return `
         <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2 font-bold text-slate-700">${idx + 1}</td>
             <td class="px-4 py-2 font-medium">${p.name}</td>
+            <td class="px-4 py-2 font-bold text-blue-600">${p.gkPoints}</td>
             <td class="px-4 py-2">${p.gkMatches}</td>
             <td class="px-4 py-2">${p.gkGoals}</td>
             <td class="px-4 py-2">${p.gkWins}V / ${p.gkDraws}E / ${p.gkLosses}D</td>
             <td class="px-4 py-2 font-bold">${media}</td>
+            <td class="px-4 py-2 text-slate-500">${p.gkLastDate || '-'}</td>
         </tr>
     `;
     }).join('');
