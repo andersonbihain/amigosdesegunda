@@ -111,6 +111,7 @@
                             <th onclick="sortTable('ranking-table', 3)" class="px-6 py-3 text-left text-xs font-bold text-red-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Derrota</th>
                             <th onclick="sortTable('ranking-table', 4)" class="px-6 py-3 text-left text-xs font-bold text-blue-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Empate</th>
                             <th onclick="sortTable('ranking-table', 5)" class="px-6 py-3 text-left text-xs font-bold text-slate-900 uppercase tracking-wider cursor-pointer hover:bg-slate-100">Pontos</th>
+                            <th onclick="sortTable('ranking-table', 6)" class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100">% Aprov.</th>
                             <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Forma</th>
                         </tr>
                     </thead>
@@ -121,21 +122,7 @@
             </div>
         </div>
 
-        <!-- Seção: Posições Específicas -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <label class="text-xs font-semibold text-slate-500">Mínimo ranking geral
-                    <input id="min-overall-games" type="number" min="1" value="5" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                </label>
-                <label class="text-xs font-semibold text-slate-500">Mínimo linha
-                    <input id="min-line-games" type="number" min="1" value="10" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                </label>
-                <label class="text-xs font-semibold text-slate-500">Mínimo goleiro
-                    <input id="min-gk-games" type="number" min="1" value="1" class="mt-1 w-full border border-slate-200 rounded px-3 py-2 text-sm">
-                </label>
-            </div>
-        </div>
-
+        <!-- Seção: Goleiros -->
         <div class="grid grid-cols-1 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-5 border-b border-slate-200 bg-slate-50">
@@ -158,48 +145,6 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 text-sm" id="gk-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h3 class="font-bold text-slate-700">🎯 Aproveitamento Geral</h3>
-                    <p class="text-xs text-slate-500 mt-1">Crit&eacute;rio: percentual de pontos conquistados no per&iacute;odo.</p>
-                </div>
-                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <table class="min-w-full divide-y divide-slate-200" id="overall-efficiency-table">
-                        <thead class="bg-slate-50 sticky top-0">
-                            <tr>
-                                <th onclick="sortTable('overall-efficiency-table', 0)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Nome</th>
-                                <th onclick="sortTable('overall-efficiency-table', 1)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
-                                <th onclick="sortTable('overall-efficiency-table', 2)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Pontos</th>
-                                <th onclick="sortTable('overall-efficiency-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">% Aprov.</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200 text-sm" id="overall-efficiency-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-5 border-b border-slate-200 bg-slate-50">
-                    <h3 class="font-bold text-slate-700">⚡ Eficiência Linha</h3>
-                    <p class="text-xs text-slate-500 mt-1">Crit&eacute;rio: pontos por jogo como jogador de linha.</p>
-                </div>
-                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-                    <table class="min-w-full divide-y divide-slate-200" id="line-table">
-                        <thead class="bg-slate-50 sticky top-0">
-                            <tr>
-                                <th onclick="sortTable('line-table', 0)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Nome</th>
-                                <th onclick="sortTable('line-table', 1)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">Jogos</th>
-                                <th onclick="sortTable('line-table', 2)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">PPG</th>
-                                <th onclick="sortTable('line-table', 3)" class="px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase cursor-pointer">% Aprov.</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200 text-sm" id="line-body"></tbody>
                     </table>
                 </div>
             </div>

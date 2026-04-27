@@ -96,17 +96,11 @@ function getRecordText(wins, draws, losses) {
     return `${wins}V / ${draws}E / ${losses}D`;
 }
 
-function getNumberInputValue(id, fallback) {
-    const input = document.getElementById(id);
-    const value = parseInt(input?.value, 10);
-    return Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
 function getRankingMinimums() {
     return {
-        overall: getNumberInputValue('min-overall-games', 5),
-        line: getNumberInputValue('min-line-games', 10),
-        gk: getNumberInputValue('min-gk-games', 1)
+        overall: 1,
+        line: 1,
+        gk: 1
     };
 }
 
@@ -120,7 +114,6 @@ let playerStats = {};
 let dashboardStats = null;
 let gkGlobalAvg = 0;
 let defaultFilterStartDate = '';
-let currentFilteredGames = [];
 const TEAM_PICKER_EXCLUDE = new Set([
     'Leonel',
     'Anderson G',
@@ -152,7 +145,6 @@ function setTeamPickerWhatsAppEnabled(isEnabled) {
 document.addEventListener('DOMContentLoaded', () => {
     initTeamPicker();
     initPlayerModal();
-    initRankingControls();
     initPlayerCompare();
     loadFromSupabase();
 });
@@ -1346,7 +1338,6 @@ function applyFilter() {
         info.textContent = 'Mostrando todos os jogos';
     }
 
-    currentFilteredGames = filtered;
     processData(filtered);
 }
 
@@ -1470,24 +1461,8 @@ function buildDashboardStats(games) {
     return { orderedGames, players, playersArr, teamStats, totalGoals, maxGoalsGame, maxDiffGame, duos };
 }
 
-function initRankingControls() {
-    ['min-overall-games', 'min-line-games', 'min-gk-games'].forEach(id => {
-        const input = document.getElementById(id);
-        if (!input) return;
-        input.addEventListener('change', () => {
-            if (currentFilteredGames.length > 0) processData(currentFilteredGames);
-        });
-    });
-}
-
 function getOverallRanking(playersArr) {
     return [...playersArr].sort((a,b) => b.points - a.points || b.wins - a.wins || compareByName(a, b));
-}
-
-function getOverallEfficiencyRanking(playersArr, minMatches) {
-    return playersArr
-        .filter(p => p.matches >= minMatches)
-        .sort((a, b) => (b.points / (b.matches * 3)) - (a.points / (a.matches * 3)) || b.points - a.points || compareByName(a, b));
 }
 
 function getGoalkeeperRanking(playersArr, minMatches = 1) {
@@ -1498,12 +1473,6 @@ function getGoalkeeperRanking(playersArr, minMatches = 1) {
             const avgB = b.gkGoals / b.gkMatches;
             return b.gkPoints - a.gkPoints || avgA - avgB || compareByName(a, b);
         });
-}
-
-function getLineRanking(playersArr, minMatches = 10) {
-    return playersArr
-        .filter(p => p.lineMatches >= minMatches)
-        .sort((a,b) => (b.linePoints/b.lineMatches) - (a.linePoints/a.lineMatches) || compareByName(a, b));
 }
 
 function getPlayerCurrentFormText(player) {
@@ -1521,12 +1490,10 @@ function renderRecentForm(results) {
         const color = r === 'V' ? 'bg-green-500' : (r === 'E' ? 'bg-slate-400' : 'bg-red-500');
         return `<span class="inline-block h-2.5 w-2.5 rounded-full ${color}"></span>`;
     }).join('');
-    const text = last.join(' ');
     const detail = last.map(getResultLabel).join(', ');
     return `
         <div class="flex flex-col gap-1" title="Últimos ${last.length}: ${escapeHtml(detail)}">
             <div class="flex items-center gap-1">${dots}</div>
-            <span class="text-[11px] text-slate-500">${escapeHtml(text)}</span>
         </div>
     `;
 }
@@ -1708,8 +1675,6 @@ function processData(games) {
         document.getElementById('team-stats-container').innerHTML = '';
         document.getElementById('ranking-body').innerHTML = '';
         document.getElementById('gk-body').innerHTML = '';
-        document.getElementById('overall-efficiency-body').innerHTML = '';
-        document.getElementById('line-body').innerHTML = '';
         document.getElementById('duo-body').innerHTML = '';
         document.getElementById('duo-worst-body').innerHTML = '';
         document.getElementById('game-select').innerHTML = '';
@@ -1772,9 +1737,9 @@ function processData(games) {
             <td class="px-6 py-3 whitespace-nowrap text-red-500">${p.losses}</td>
             <td class="px-6 py-3 whitespace-nowrap text-blue-500">${p.draws}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-900 font-bold text-lg">${p.points}</td>
+            <td class="px-6 py-3 whitespace-nowrap text-slate-500">${formatPct((p.points / (p.matches * 3)) * 100)}</td>
             <td class="px-6 py-3 whitespace-nowrap text-slate-500">
                 ${renderRecentForm(p.lastResults)}
-                <span class="block text-[11px] text-slate-500 mt-1">${escapeHtml(getPlayerCurrentFormText(p))}</span>
             </td>
         </tr>
     `).join('');
@@ -1801,30 +1766,6 @@ function processData(games) {
     `;
     }).join('');
 
-    // Linha
-    const overallEfficiencyArr = getOverallEfficiencyRanking(playersArr, minimums.overall);
-    document.getElementById('overall-efficiency-body').innerHTML = overallEfficiencyArr.map(p => `
-        <tr class="hover:bg-slate-50">
-            <td class="px-4 py-2 font-medium">
-                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
-            </td>
-            <td class="px-4 py-2">${p.matches}</td>
-            <td class="px-4 py-2 font-bold text-blue-600">${p.points}</td>
-            <td class="px-4 py-2 text-xs text-slate-500">${formatPct((p.points / (p.matches*3))*100)}</td>
-        </tr>
-    `).join('');
-
-    const lineArr = getLineRanking(playersArr, minimums.line);
-    document.getElementById('line-body').innerHTML = lineArr.map(p => `
-        <tr class="hover:bg-slate-50">
-            <td class="px-4 py-2 font-medium">
-                <button type="button" class="player-detail-link" data-player="${escapeHtml(p.name)}">${escapeHtml(p.name)}</button>
-            </td>
-            <td class="px-4 py-2">${p.lineMatches}</td>
-            <td class="px-4 py-2 font-bold text-blue-600">${(p.linePoints / p.lineMatches).toFixed(2)}</td>
-            <td class="px-4 py-2 text-xs text-slate-500">${formatPct((p.linePoints / (p.lineMatches*3))*100)}</td>
-        </tr>
-    `).join('');
     renderPlayerComparison();
 
     // Duplas
@@ -1920,13 +1861,26 @@ function sortTable(tableId, colIndex) {
     const tbody = table.querySelector('tbody');
     const rows = Array.from(tbody.querySelectorAll('tr'));
     const isAsc = table.getAttribute('data-order') === 'asc';
+    const parseSortValue = (text) => {
+        const clean = text.trim().replace('%','');
+        const brDate = clean.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (brDate) {
+            const [, dd, mm, yyyy] = brDate;
+            return Number(`${yyyy}${mm}${dd}`);
+        }
+        const numeric = Number(clean.replace(',', '.'));
+        return Number.isFinite(numeric) && clean !== '' ? numeric : clean;
+    };
     
     rows.sort((a, b) => {
-        const valA = a.cells[colIndex].innerText.replace('%','');
-        const valB = b.cells[colIndex].innerText.replace('%','');
-        return isAsc 
-            ? valA.localeCompare(valB, undefined, {numeric: true}) 
-            : valB.localeCompare(valA, undefined, {numeric: true});
+        const valA = parseSortValue(a.cells[colIndex].innerText);
+        const valB = parseSortValue(b.cells[colIndex].innerText);
+        if (typeof valA === 'number' && typeof valB === 'number') {
+            return isAsc ? valA - valB : valB - valA;
+        }
+        return isAsc
+            ? String(valA).localeCompare(String(valB), undefined, {numeric: true})
+            : String(valB).localeCompare(String(valA), undefined, {numeric: true});
     });
 
     table.setAttribute('data-order', isAsc ? 'desc' : 'asc');
